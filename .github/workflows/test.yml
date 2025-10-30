@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Cache pip packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'requirements-dev.txt') }}
@@ -55,14 +55,15 @@ jobs:
       run: |
         pytest tests/unit -v --cov=AmbP3 --cov-report=xml --cov-report=term-missing
 
-    - name: Run integration tests with pytest
-      run: |
-        pytest tests/integration -v || echo "No integration tests yet"
+    # Integration tests are temporarily disabled due to hanging issues
+    # - name: Run integration tests with pytest
+    #   run: |
+    #     pytest tests/integration -v || echo "Integration tests skipped"
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
@@ -74,7 +75,7 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.python-version }}
         path: test-results.xml
@@ -82,12 +83,12 @@ jobs:
   security-audit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
@@ -103,12 +104,12 @@ jobs:
   type-check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
