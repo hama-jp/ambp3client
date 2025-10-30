@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from time import sleep
 from sys import exit
+import os
 
 from AmbP3.config import get_args
 from AmbP3.decoder import Connection
@@ -46,8 +47,9 @@ def main():
         exit(1)
 
     # Wait for decoder timestamp with timeout and retry logic
-    MAX_RETRIES = 30
-    RETRY_INTERVAL = 1  # seconds
+    # These can be configured via environment variables (useful for testing)
+    MAX_RETRIES = int(os.getenv("DECODER_TIME_MAX_RETRIES", "30"))
+    RETRY_INTERVAL = float(os.getenv("DECODER_TIME_RETRY_INTERVAL", "1.0"))
     decoder_time = None
     retry_count = 0
 
