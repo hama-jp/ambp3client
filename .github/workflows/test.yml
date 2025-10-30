@@ -52,6 +52,9 @@ jobs:
         bandit -r AmbP3/ -ll
 
     - name: Run unit tests with pytest
+      env:
+        DECODER_TIME_MAX_RETRIES: "3"
+        DECODER_TIME_RETRY_INTERVAL: "0.1"
       run: |
         pytest tests/unit -v --cov=AmbP3 --cov-report=xml --cov-report=term-missing
 
@@ -70,6 +73,9 @@ jobs:
 
     - name: Generate test report
       if: always()
+      env:
+        DECODER_TIME_MAX_RETRIES: "3"
+        DECODER_TIME_RETRY_INTERVAL: "0.1"
       run: |
         pytest tests/ --junitxml=test-results.xml || true
 

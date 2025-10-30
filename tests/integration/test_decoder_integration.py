@@ -95,6 +95,8 @@ class MockDecoderServer:
             try:
                 data_bytes = bytes.fromhex(hex_data)
                 self.client_socket.send(data_bytes)
+                # Give client time to read the data before potential timeout
+                time.sleep(0.05)
             except Exception as e:
                 print(f"Error sending raw data: {e}")
 
@@ -145,7 +147,7 @@ class TestDecoderIntegration:
     def test_connection_to_mock_server(self, mock_decoder_server):
         """Test connecting to mock server."""
         conn = Connection(mock_decoder_server.host, mock_decoder_server.actual_port)
-        conn.connect()
+        conn.connect(timeout=2.0)
 
         assert conn.socket is not None
 
@@ -157,17 +159,27 @@ class TestDecoderIntegration:
         # Sample PASSING message
         test_message = "8e021f00f3890000020001022800070216000c01760601008104131804008f"
 
-        # Connect client
+        # Connect client with shorter timeout for tests
         conn = Connection(mock_decoder_server.host, mock_decoder_server.actual_port)
-        conn.connect()
+        conn.connect(timeout=2.0)
+
+        # Give server time to complete accept() before sending
+        time.sleep(0.2)
 
         # Send message from server
         mock_decoder_server.send_raw(test_message)
-        time.sleep(0.1)
+        time.sleep(0.1)  # Give server time to send
 
-        # Read and verify
+        # Read and verify (may timeout, retry with delay)
         data_list = conn.read(bufsize=1024)
-        assert len(data_list) > 0
+        retry_count = 0
+        while len(data_list) == 0 and retry_count < 3:
+            # Retry if timeout occurred
+            time.sleep(0.2)
+            data_list = conn.read(bufsize=1024)
+            retry_count += 1
+
+        assert len(data_list) > 0, "Should receive at least one message"
 
         # Decode first message
         header, body = p3decode(bytes(data_list[0]))
@@ -232,12 +244,22 @@ class TestDecoderIntegration:
         passing_msg = "8e02330053c800000100010451680200030473d75600040888f2fab51e8305000502b20006023400080200008104131804008f"
 
         conn = Connection(mock_decoder_server.host, mock_decoder_server.actual_port)
-        conn.connect()
+        conn.connect(timeout=2.0)
+
+        # Give server time to complete accept()
+        time.sleep(0.2)
 
         mock_decoder_server.send_raw(passing_msg)
         time.sleep(0.1)
 
         data_list = conn.read(bufsize=1024)
+        retry_count = 0
+        while len(data_list) == 0 and retry_count < 3:
+            time.sleep(0.2)
+            data_list = conn.read(bufsize=1024)
+            retry_count += 1
+
+        assert len(data_list) > 0, "Should receive message"
         header, body = p3decode(bytes(data_list[0]))
 
         assert body is not None
@@ -258,15 +280,23 @@ class TestDecoderIntegration:
         concatenated = msg1 + msg2
 
         conn = Connection(mock_decoder_server.host, mock_decoder_server.actual_port)
-        conn.connect()
+        conn.connect(timeout=2.0)
+
+        # Give server time to complete accept()
+        time.sleep(0.2)
 
         mock_decoder_server.send_raw(concatenated)
         time.sleep(0.1)
 
         data_list = conn.read(bufsize=2048)
+        retry_count = 0
+        while len(data_list) == 0 and retry_count < 3:
+            time.sleep(0.2)
+            data_list = conn.read(bufsize=2048)
+            retry_count += 1
 
         # Should split into 2 records
-        assert len(data_list) >= 1
+        assert len(data_list) >= 1, "Should receive at least one record"
 
         # Each should be decodable
         for data in data_list:
