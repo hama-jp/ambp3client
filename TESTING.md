@@ -81,6 +81,24 @@ pytest -v
 pytest --lf
 ```
 
+### マーカーでテストをフィルタリング
+
+特定のマーカーが付いたテストのみを実行できます：
+
+```bash
+# 統合テストのみ
+pytest -m integration
+
+# 統合テスト以外
+pytest -m "not integration"
+
+# 遅いテストをスキップ
+pytest -m "not slow"
+
+# ネットワークテストのみ
+pytest -m network
+```
+
 ## テストの種類
 
 ### ユニットテスト (tests/unit/)
@@ -94,11 +112,49 @@ pytest --lf
 
 複数のコンポーネントが連携して動作することをテストします。
 
+- `test_decoder_integration.py`: デコーダーとの通信テスト（模擬サーバー使用）
+- `test_end_to_end.py`: エンドツーエンドワークフローのテスト
+
+#### 模擬デコーダーサーバーを使用したテスト
+
+統合テストでは、`MockDecoderServer`クラスを使用して実際のAMB Decoderをシミュレートします：
+
+```bash
+# 統合テストのみ実行
+pytest tests/integration -v
+
+# 特定の統合テストを実行
+pytest tests/integration/test_decoder_integration.py::TestDecoderIntegration::test_receive_single_message -v
+```
+
+#### 実際のtest_server.pyを使用したテスト
+
+`test_server.py`を起動して、より現実的な統合テストを実行できます：
+
+```bash
+# ターミナル1: テストサーバーを起動
+./test_server.py test_server/amb-short.out -p 12001
+
+# ターミナル2: 実サーバーとの統合テストを実行
+pytest tests/integration/test_decoder_integration.py::TestRealDecoderConnection -v
+```
+
 ### テストフィクスチャ (tests/fixtures/)
 
 テストで使用するサンプルデータやヘルパー関数を提供します。
 
 - `sample_data.py`: サンプルデータとフィクスチャ
+
+### テストユーティリティ (tests/test_utils.py)
+
+テストで使用する共通のヘルパー関数：
+
+- `is_port_available()`: ポートが使用可能かチェック
+- `wait_for_port()`: ポートが使用可能になるまで待機
+- `find_free_port()`: 空きポートを検索
+- `read_hex_data_file()`: 16進数データファイルを読み込み
+- `validate_p3_message()`: P3メッセージの基本構造を検証
+- `TestTimer`: テスト実行時間を測定
 
 ## カバレッジレポート
 
