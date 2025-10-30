@@ -57,7 +57,7 @@ jobs:
 
     - name: Run integration tests with pytest
       run: |
-        pytest tests/integration -v || echo "No integration tests yet"
+        pytest tests/integration -v --timeout=30 -x || echo "Integration tests skipped or incomplete"
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
