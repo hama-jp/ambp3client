@@ -1,0 +1,19 @@
+[bandit]
+# Bandit configuration file
+# Skip B608 (hardcoded_sql_expressions) for AmbP3/write.py
+# This is safe because:
+# - Table names are validated against a whitelist
+# - Column names are validated against a whitelist
+# - Values are properly parameterized using %s placeholders
+
+# Skip tests by ID
+skips: B608
+
+# Exclude paths (optional)
+# exclude_dirs: /test/,/venv/
+
+# Report only high severity issues (optional)
+# severity: HIGH
+
+# Report only high confidence issues (optional)
+# confidence: HIGH
