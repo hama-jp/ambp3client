@@ -19,9 +19,53 @@ def open_mysql_connection(
 
 
 def dict_to_sqlquery(data_dict, table):
+    """
+    Generate parameterized INSERT SQL query from a dictionary.
+
+    Note: Table and column names cannot be parameterized in SQL.
+    This function is safe because:
+    - table parameter is always a hardcoded string (default: "passes")
+    - column names come from a fixed mysql_p3_map dictionary
+    - values are properly parameterized using %s placeholders
+    """
+    # Whitelist validation for table names
+    allowed_tables = {"passes", "laps", "heats", "settings", "karts"}
+    if table not in allowed_tables:
+        raise ValueError(f"Invalid table name: {table}")
+
+    # Whitelist validation for column names
+    allowed_columns = {
+        "pass_id",
+        "transponder_id",
+        "rtc_time",
+        "strength",
+        "hits",
+        "flags",
+        "decoder_id",
+        "heat_id",
+        "lap_id",
+        "heat_finished",
+        "first_pass_id",
+        "last_pass_id",
+        "rtc_time_start",
+        "rtc_time_end",
+        "rtc_time_max_end",
+        "race_flag",
+        "setting",
+        "value",
+        "name",
+        "kart_number",
+    }
+    for column in data_dict.keys():
+        if column not in allowed_columns:
+            raise ValueError(f"Invalid column name: {column}")
+
     columns_string = "( {} )".format(",".join(data_dict.keys()))
     values_string = "( {} )".format(",".join(["%s"] * len(data_dict.values())))
-    sql = """INSERT INTO {} {} VALUES {}""".format(table, columns_string, values_string)
+    # Table and column names are validated against whitelist above
+    sql = """INSERT INTO {} {} VALUES {}""".format(
+        table, columns_string, values_string
+    )  # nosec B608
     return sql
 
 
