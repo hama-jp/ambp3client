@@ -33,7 +33,7 @@ def main():
     cursor = mysql_con.cursor()
     my_cursor = Cursor(mysql_con, cursor)
 
-    """ start Connectio to Decoder """
+    """ start Connection to Decoder """
     connection = Connection(config.ip, config.port)
     connection.connect()
     RefreshTime(connection)
@@ -45,17 +45,40 @@ def main():
         print("debug file not defined in config")
         exit(1)
 
-    while "decoder_time" not in locals():
-        print("Waiting for DECODER timestamp")
-        for data in connection.read():
-            decoded_data = data_to_ascii(data)
-            decoded_header, decoded_body = p3decode(
-                data
-            )  # NEED OT REPLACE WITH LOGGING
-            if "GET_TIME" == decoded_body["RESULT"]["TOR"]:
-                decoder_time = DecoderTime(int(decoded_body["RESULT"]["RTC_TIME"], 16))
-                print(f"GET_TIME: {decoder_time.decoder_time} Conitnue")
-                break
+    # Wait for decoder timestamp with timeout and retry logic
+    MAX_RETRIES = 30
+    RETRY_INTERVAL = 1  # seconds
+    decoder_time = None
+    retry_count = 0
+
+    while decoder_time is None and retry_count < MAX_RETRIES:
+        print(f"Waiting for DECODER timestamp (attempt {retry_count + 1}/{MAX_RETRIES})")
+        try:
+            for data in connection.read():
+                decoded_data = data_to_ascii(data)
+                decoded_header, decoded_body = p3decode(
+                    data
+                )  # NEED TO REPLACE WITH LOGGING
+                if decoded_body and "RESULT" in decoded_body and "TOR" in decoded_body["RESULT"]:
+                    if "GET_TIME" == decoded_body["RESULT"]["TOR"]:
+                        decoder_time = DecoderTime(int(decoded_body["RESULT"]["RTC_TIME"], 16))
+                        print(f"GET_TIME: {decoder_time.decoder_time} Continue")
+                        break
+        except Exception as e:
+            print(f"Error reading decoder time: {e}")
+            retry_count += 1
+            if retry_count < MAX_RETRIES:
+                sleep(RETRY_INTERVAL)
+            continue
+
+        if decoder_time is None:
+            retry_count += 1
+            if retry_count < MAX_RETRIES:
+                sleep(RETRY_INTERVAL)
+
+    if decoder_time is None:
+        print(f"ERROR: Failed to get decoder time after {MAX_RETRIES} attempts")
+        exit(1)
 
     TimeServer(decoder_time)
 
