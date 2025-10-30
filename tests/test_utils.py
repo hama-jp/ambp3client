@@ -1,4 +1,5 @@
 """Utility functions for testing."""
+
 import socket
 import time
 from contextlib import contextmanager
@@ -48,7 +49,7 @@ def wait_for_port(host, port, timeout=5.0, interval=0.1):
     raise TimeoutError(f"Port {port} did not become available within {timeout}s")
 
 
-def find_free_port(host='127.0.0.1', start_port=10000, max_tries=100):
+def find_free_port(host="127.0.0.1", start_port=10000, max_tries=100):
     """Find a free port on the host.
 
     Args:
@@ -65,11 +66,13 @@ def find_free_port(host='127.0.0.1', start_port=10000, max_tries=100):
     for port in range(start_port, start_port + max_tries):
         if is_port_available(host, port):
             return port
-    raise RuntimeError(f"Could not find free port in range {start_port}-{start_port + max_tries}")
+    raise RuntimeError(
+        f"Could not find free port in range {start_port}-{start_port + max_tries}"
+    )
 
 
 @contextmanager
-def temporary_socket_server(host='127.0.0.1', port=0):
+def temporary_socket_server(host="127.0.0.1", port=0):
     """Context manager for a temporary socket server.
 
     Args:
@@ -106,7 +109,7 @@ def read_hex_data_file(file_path, max_lines=None):
     """
     hex_data = []
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             for i, line in enumerate(f):
                 if max_lines and i >= max_lines:
                     break
@@ -169,11 +172,11 @@ def validate_p3_message(data):
         return False
 
     # Check SOR (Start of Record) - should be 0x8e
-    if data[0] != 0x8e:
+    if data[0] != 0x8E:
         return False
 
     # Check EOR (End of Record) - should be 0x8f
-    if data[-1] != 0x8f:
+    if data[-1] != 0x8F:
         return False
 
     return True
@@ -228,4 +231,6 @@ def assert_similar_dicts(dict1, dict2, ignore_keys=None):
     assert keys1 == keys2, f"Key mismatch: {keys1} vs {keys2}"
 
     for key in keys1:
-        assert dict1[key] == dict2[key], f"Value mismatch for key '{key}': {dict1[key]} vs {dict2[key]}"
+        assert (
+            dict1[key] == dict2[key]
+        ), f"Value mismatch for key '{key}': {dict1[key]} vs {dict2[key]}"

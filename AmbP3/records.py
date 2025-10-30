@@ -1,73 +1,65 @@
 DECODER_TYPE = {
-    b'10': "AMBrc",
-    b'11': "AMBMX",
-    b'12': "TranX",
-    b'13': "TranX Pro",
-    b'14': "TranX Pro",
+    b"10": "AMBrc",
+    b"11": "AMBMX",
+    b"12": "TranX",
+    b"13": "TranX Pro",
+    b"14": "TranX Pro",
 }
 
 ERROR_CODES = {
-   b'0001': 'CRC Error',
-   b'0002': 'SOR Missing',
-   b'0003': 'Header corrupt',
-   b'0004': 'TOR Unknown',
-   b'0005': 'Parameters missing',
-   b'0006': 'Length of record to long',
-   }
+    b"0001": "CRC Error",
+    b"0002": "SOR Missing",
+    b"0003": "Header corrupt",
+    b"0004": "TOR Unknown",
+    b"0005": "Parameters missing",
+    b"0006": "Length of record to long",
+}
 
-GENERAL = {
-    b'81': 'DECODER_ID',
-    b'83': 'CONTROLLER_ID',
-    b'85': 'REQUEST_ID'
-    }
+GENERAL = {b"81": "DECODER_ID", b"83": "CONTROLLER_ID", b"85": "REQUEST_ID"}
 
 VERSION = {
-    b'01': 'DECODER_TYPE',
-    b'02': 'DESCRIPTION',
-    b'03': 'VERSION',
-    b'04': 'RELEASE',
-    b'08': 'REGISTRATION',
-    b'0A': 'BUILD_NUMBER',
-    b'0C': 'OPTIONS',
-    'DECODER_TYPE': DECODER_TYPE
+    b"01": "DECODER_TYPE",
+    b"02": "DESCRIPTION",
+    b"03": "VERSION",
+    b"04": "RELEASE",
+    b"08": "REGISTRATION",
+    b"0A": "BUILD_NUMBER",
+    b"0C": "OPTIONS",
+    "DECODER_TYPE": DECODER_TYPE,
 }
 
 PASSING = {
-   b'01': 'PASSING_NUMBER',
-   b'03': 'TRANSPONDER',
-   b'04': 'RTC_TIME',
-   b'05': 'STRENGTH',
-   b'06': 'HITS',
-   b'08': 'FLAGS',
-   b'10': 'UTC_TIME',
-   b'13': 'RTC_ID',
-   b'14': 'SPORT',
-   b'30': 'VOLTAGE',
-   b'31': 'TEMPERATURE',
-   b'0a': 'TRAN_CODE',
-   b'0e': 'USER_FLAG',
-   b'0f': 'DRIVER_ID',
-   }
-
-STATUS = {
-    b'01': 'NOISE',
-    b'06': 'GPS',
-    b'07': 'TEMPERATURE',
-    b'0a': 'SATINUSE',
-    b'0b': 'LOOP_TRIGGERS',
-    b'0c': 'INPUT_VOLTAGE'
-    }
-
-ERROR = {
-    b'1': 'CODE',
-    b'02': 'DESCRIPTION',
-    'ERROR_CODES': ERROR_CODES
+    b"01": "PASSING_NUMBER",
+    b"03": "TRANSPONDER",
+    b"04": "RTC_TIME",
+    b"05": "STRENGTH",
+    b"06": "HITS",
+    b"08": "FLAGS",
+    b"10": "UTC_TIME",
+    b"13": "RTC_ID",
+    b"14": "SPORT",
+    b"30": "VOLTAGE",
+    b"31": "TEMPERATURE",
+    b"0a": "TRAN_CODE",
+    b"0e": "USER_FLAG",
+    b"0f": "DRIVER_ID",
 }
 
+STATUS = {
+    b"01": "NOISE",
+    b"06": "GPS",
+    b"07": "TEMPERATURE",
+    b"0a": "SATINUSE",
+    b"0b": "LOOP_TRIGGERS",
+    b"0c": "INPUT_VOLTAGE",
+}
+
+ERROR = {b"1": "CODE", b"02": "DESCRIPTION", "ERROR_CODES": ERROR_CODES}
+
 RESEND = {
-        b'01': 'FROM',    # 4 byte
-        b'02': 'UNTIL',   # 4 byte
-        }
+    b"01": "FROM",  # 4 byte
+    b"02": "UNTIL",  # 4 byte
+}
 RESET = {}
 CLEAR_PASSING = {}
 SERVER_SETTINGS = {}
@@ -76,10 +68,10 @@ NETWORK_SETTINGS = {}
 WATCHDOG = {}
 PING = {}
 GET_TIME = {
-        b'01': 'RTC_TIME',  # 4 bytes
-        b'04': 'FLAGS',  # 2 bytes  NOT SURE IF THIS IS FLAGS ACTUALLY JUST GUESSING
-        b'05': 'UTC_TIME'  # 0bytes  is sued to ask for time
-        }
+    b"01": "RTC_TIME",  # 4 bytes
+    b"04": "FLAGS",  # 2 bytes  NOT SURE IF THIS IS FLAGS ACTUALLY JUST GUESSING
+    b"05": "UTC_TIME",  # 0bytes  is sued to ask for time
+}
 GENERAL_SETTINGS = {}
 GPS_INFO = {}
 FIRST_CONTACT = {}
@@ -88,26 +80,27 @@ LOOP_TRIGER = {}
 TIMELINE = {}
 
 
-type_of_records = {b'0000': {'tor_name': 'RESET', 'tor_fields': RESET},
-                   b'0001': {'tor_name': 'PASSING', 'tor_fields': PASSING},
-                   b'0002': {'tor_name': 'STATUS', 'tor_fields': STATUS},
-                   b'0003': {'tor_name': 'VERSION', 'tor_fields': VERSION},
-                   b'0004': {'tor_name': 'RESEND', 'tor_fields': RESEND},
-                   b'0005': {'tor_name': 'CLEAR_PASSING', 'tor_fields': CLEAR_PASSING},
-                   b'0013': {'tor_name': 'SERVER_SETTINGS', 'tor_fields': SERVER_SETTINGS},
-                   b'0015': {'tor_name': 'SESSION', 'tor_fields': SESSION},
-                   b'0016': {'tor_name': 'NETWORK_SETTINGS', 'tor_fields': NETWORK_SETTINGS},
-                   b'0018': {'tor_name': 'WATCHDOG', 'tor_fields': WATCHDOG},
-                   b'0020': {'tor_name': 'PING', 'tor_fields': PING},
-                   b'0024': {'tor_name': 'GET_TIME', 'tor_fields': GET_TIME},
-                   b'0028': {'tor_name': 'GENERAL_SETTINGS', 'tor_fields': GENERAL_SETTINGS},
-                   b'0030': {'tor_name': 'GPS_INFO', 'tor_fields': GPS_INFO},
-                   b'0045': {'tor_name': 'FIRST_CONTACT', 'tor_fields': FIRST_CONTACT},
-                   b'002d': {'tor_name': 'SIGNALS', 'tor_fields': SIGNALS},
-                   b'002f': {'tor_name': 'LOOP_TRIGGER', 'tor_fields': LOOP_TRIGER},
-                   b'004a': {'tor_name': 'TIMELINE', 'tor_fields': TIMELINE},
-                   b'ffff': {'tor_name': 'ERROR', 'tor_fields': ERROR}
-                   }
+type_of_records = {
+    b"0000": {"tor_name": "RESET", "tor_fields": RESET},
+    b"0001": {"tor_name": "PASSING", "tor_fields": PASSING},
+    b"0002": {"tor_name": "STATUS", "tor_fields": STATUS},
+    b"0003": {"tor_name": "VERSION", "tor_fields": VERSION},
+    b"0004": {"tor_name": "RESEND", "tor_fields": RESEND},
+    b"0005": {"tor_name": "CLEAR_PASSING", "tor_fields": CLEAR_PASSING},
+    b"0013": {"tor_name": "SERVER_SETTINGS", "tor_fields": SERVER_SETTINGS},
+    b"0015": {"tor_name": "SESSION", "tor_fields": SESSION},
+    b"0016": {"tor_name": "NETWORK_SETTINGS", "tor_fields": NETWORK_SETTINGS},
+    b"0018": {"tor_name": "WATCHDOG", "tor_fields": WATCHDOG},
+    b"0020": {"tor_name": "PING", "tor_fields": PING},
+    b"0024": {"tor_name": "GET_TIME", "tor_fields": GET_TIME},
+    b"0028": {"tor_name": "GENERAL_SETTINGS", "tor_fields": GENERAL_SETTINGS},
+    b"0030": {"tor_name": "GPS_INFO", "tor_fields": GPS_INFO},
+    b"0045": {"tor_name": "FIRST_CONTACT", "tor_fields": FIRST_CONTACT},
+    b"002d": {"tor_name": "SIGNALS", "tor_fields": SIGNALS},
+    b"002f": {"tor_name": "LOOP_TRIGGER", "tor_fields": LOOP_TRIGER},
+    b"004a": {"tor_name": "TIMELINE", "tor_fields": TIMELINE},
+    b"ffff": {"tor_name": "ERROR", "tor_fields": ERROR},
+}
 
 
 # NEED TO IMPLEMENT

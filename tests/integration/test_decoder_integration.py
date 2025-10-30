@@ -1,4 +1,5 @@
 """Integration tests for decoder with mock server."""
+
 import pytest
 import socket
 import threading
@@ -10,7 +11,7 @@ from AmbP3.decoder import Connection, p3decode, hex_to_binary
 class MockDecoderServer:
     """Mock AMB Decoder server for testing."""
 
-    def __init__(self, host='127.0.0.1', port=0, data_file=None):
+    def __init__(self, host="127.0.0.1", port=0, data_file=None):
         """Initialize mock server.
 
         Args:
@@ -63,7 +64,7 @@ class MockDecoderServer:
     def _send_data_from_file(self):
         """Read hex data from file and send to client."""
         try:
-            with open(self.data_file, 'r') as f:
+            with open(self.data_file, "r") as f:
                 for line in f:
                     if not self.running:
                         break
@@ -183,11 +184,7 @@ class TestDecoderIntegration:
             pytest.skip("Sample data file not found")
 
         # Create new server with data file
-        server = MockDecoderServer(
-            host='127.0.0.1',
-            port=0,
-            data_file=sample_data_file
-        )
+        server = MockDecoderServer(host="127.0.0.1", port=0, data_file=sample_data_file)
         server.start()
 
         try:
@@ -213,8 +210,8 @@ class TestDecoderIntegration:
 
                             # Basic validation
                             if header is not None:
-                                assert 'SOR' in header
-                                assert 'TOR' in header
+                                assert "SOR" in header
+                                assert "TOR" in header
 
                 except socket.timeout:
                     break
@@ -244,11 +241,11 @@ class TestDecoderIntegration:
         header, body = p3decode(bytes(data_list[0]))
 
         assert body is not None
-        assert 'RESULT' in body
+        assert "RESULT" in body
 
         # Should contain transponder information
-        result = body['RESULT']
-        assert 'TOR' in result
+        result = body["RESULT"]
+        assert "TOR" in result
 
         conn.close()
 
@@ -303,7 +300,7 @@ class TestHexToBinaryIntegration:
         if not sample_data_file:
             pytest.skip("Sample data file not found")
 
-        with open(sample_data_file, 'r') as f:
+        with open(sample_data_file, "r") as f:
             for line in f.readlines()[:5]:  # Test first 5 lines
                 line = line.strip()
                 if not line:
@@ -333,7 +330,7 @@ class TestRealDecoderConnection:
         1. Start test server: ./test_server.py test_server/amb-short.out -p 12001
         2. Run this test: pytest tests/integration/test_decoder_integration.py::TestRealDecoderConnection -v
         """
-        test_host = '127.0.0.1'
+        test_host = "127.0.0.1"
         test_port = 12001
 
         # Try to connect

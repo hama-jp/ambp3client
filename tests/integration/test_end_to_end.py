@@ -1,4 +1,5 @@
 """End-to-end integration tests."""
+
 import pytest
 import time
 from pathlib import Path
@@ -6,14 +7,14 @@ from tests.test_utils import (
     read_hex_data_file,
     hex_to_bytes,
     validate_p3_message,
-    TestTimer
+    TestTimer,
 )
 from AmbP3.decoder import (
     Connection,
     p3decode,
     hex_to_binary,
     bin_data_to_ascii,
-    bin_to_decimal
+    bin_to_decimal,
 )
 
 
@@ -53,9 +54,9 @@ class TestEndToEndWorkflow:
                     decoded_count += 1
 
                     # Check if it's a passing record
-                    if 'RESULT' in body and 'TOR' in body['RESULT']:
-                        tor = body['RESULT'].get('TOR')
-                        if tor == 'PASSING':
+                    if "RESULT" in body and "TOR" in body["RESULT"]:
+                        tor = body["RESULT"].get("TOR")
+                        if tor == "PASSING":
                             passing_count += 1
 
             except Exception as e:
@@ -85,8 +86,9 @@ class TestEndToEndWorkflow:
                 binary_data = hex_to_binary(hex_msg)
                 header, body = p3decode(binary_data)
 
-                assert header is not None or body is not None, \
-                    f"Valid message should be decodable: {msg_type}"
+                assert (
+                    header is not None or body is not None
+                ), f"Valid message should be decodable: {msg_type}"
             else:
                 invalid_count += 1
 
@@ -105,8 +107,8 @@ class TestEndToEndWorkflow:
         This bug is documented in test_decoder.py::TestHexToBinary::test_multiple_bytes
         """
         test_data = [
-            b'\x8e\x02\x1f\x00',  # OK: has non-zero bytes
-            b'\xff\xaa\x00\x12',  # OK: has non-zero bytes
+            b"\x8e\x02\x1f\x00",  # OK: has non-zero bytes
+            b"\xff\xaa\x00\x12",  # OK: has non-zero bytes
             # b'\x00\x00\x00\x00',  # FAILS: hex_to_binary bug with all zeros
         ]
 
@@ -117,8 +119,9 @@ class TestEndToEndWorkflow:
             # ASCII -> Binary
             recovered = hex_to_binary(ascii_repr)
 
-            assert recovered == original, \
-                f"Round-trip failed: {original.hex()} -> {ascii_repr} -> {recovered.hex()}"
+            assert (
+                recovered == original
+            ), f"Round-trip failed: {original.hex()} -> {ascii_repr} -> {recovered.hex()}"
 
     @pytest.mark.xfail(reason="BUG: hex_to_binary fails with all-zero bytes")
     def test_binary_conversions_all_zeros(self):
@@ -127,12 +130,13 @@ class TestEndToEndWorkflow:
         This is a known bug where hex_to_binary calculates byte length
         incorrectly for values that result in short binary representations.
         """
-        original = b'\x00\x00\x00\x00'
+        original = b"\x00\x00\x00\x00"
         ascii_repr = bin_data_to_ascii(original)  # "00000000"
         recovered = hex_to_binary(ascii_repr)
 
-        assert recovered == original, \
-            f"Round-trip failed: {original.hex()} -> {ascii_repr} -> {recovered.hex()}"
+        assert (
+            recovered == original
+        ), f"Round-trip failed: {original.hex()} -> {ascii_repr} -> {recovered.hex()}"
 
     def test_performance_decode_many_messages(self, sample_amb_data_file):
         """Test performance of decoding many messages."""
@@ -159,11 +163,14 @@ class TestEndToEndWorkflow:
         assert elapsed < 10.0, "Processing should complete in under 10 seconds"
         assert messages_per_second > 5, "Should process at least 5 messages/second"
 
-    @pytest.mark.parametrize("hex_message", [
-        "8e021f00f3890000020001022800070216000c01760601008104131804008f",
-        "8e021f00895d0000020001022500070216000c01760601008104131804008f",
-        "8e021f006e970000020001022700070216000c01770601008104131804008f",
-    ])
+    @pytest.mark.parametrize(
+        "hex_message",
+        [
+            "8e021f00f3890000020001022800070216000c01760601008104131804008f",
+            "8e021f00895d0000020001022500070216000c01760601008104131804008f",
+            "8e021f006e970000020001022700070216000c01770601008104131804008f",
+        ],
+    )
     def test_decode_specific_messages(self, hex_message):
         """Test decoding specific known messages."""
         # Validate
@@ -175,12 +182,12 @@ class TestEndToEndWorkflow:
 
         # Basic structure checks
         assert header is not None, "Should have header"
-        assert 'SOR' in header, "Header should have SOR"
-        assert 'TOR' in header, "Header should have TOR"
-        assert 'Length' in header, "Header should have Length"
+        assert "SOR" in header, "Header should have SOR"
+        assert "TOR" in header, "Header should have TOR"
+        assert "Length" in header, "Header should have Length"
 
         assert body is not None, "Should have body"
-        assert 'RESULT' in body, "Body should have RESULT"
+        assert "RESULT" in body, "Body should have RESULT"
 
     def test_error_handling_invalid_messages(self):
         """Test error handling with invalid messages."""
@@ -223,7 +230,7 @@ class TestEndToEndWorkflow:
         results = []
 
         for i in range(0, len(hex_messages), batch_size):
-            batch = hex_messages[i:i+batch_size]
+            batch = hex_messages[i : i + batch_size]
             batch_results = []
 
             for hex_msg in batch:
@@ -257,18 +264,18 @@ class TestEndToEndWorkflow:
             if header and body:
                 # Check header structure
                 assert isinstance(header, dict), "Header should be dict"
-                assert 'SOR' in header, "Should have SOR"
+                assert "SOR" in header, "Should have SOR"
 
                 # SOR should be 0x8e
-                if isinstance(header['SOR'], bytes):
-                    assert header['SOR'] == b'\x8e', "SOR should be 0x8e"
+                if isinstance(header["SOR"], bytes):
+                    assert header["SOR"] == b"\x8e", "SOR should be 0x8e"
 
                 # Check body structure
                 assert isinstance(body, dict), "Body should be dict"
 
                 # If there's a RESULT, it should be a dict
-                if 'RESULT' in body:
-                    assert isinstance(body['RESULT'], dict), "RESULT should be dict"
+                if "RESULT" in body:
+                    assert isinstance(body["RESULT"], dict), "RESULT should be dict"
 
 
 @pytest.mark.integration
@@ -283,7 +290,7 @@ class TestRealWorldScenarios:
         # 2. Wait for GET_TIME message
         # 3. Process passing records
 
-        get_time_msg = sample_p3_messages.get('get_time')
+        get_time_msg = sample_p3_messages.get("get_time")
         if get_time_msg:
             binary_data = hex_to_binary(get_time_msg)
             header, body = p3decode(binary_data)
@@ -333,17 +340,17 @@ class TestRealWorldScenarios:
         hex_messages = read_hex_data_file(sample_amb_data_file, max_lines=20)
 
         stats = {
-            'total': len(hex_messages),
-            'valid_format': 0,
-            'decodable': 0,
-            'has_transponder': 0,
-            'has_rtc_time': 0,
+            "total": len(hex_messages),
+            "valid_format": 0,
+            "decodable": 0,
+            "has_transponder": 0,
+            "has_rtc_time": 0,
         }
 
         for hex_msg in hex_messages:
             # Check format
             if validate_p3_message(hex_msg):
-                stats['valid_format'] += 1
+                stats["valid_format"] += 1
 
                 try:
                     # Try to decode
@@ -351,15 +358,15 @@ class TestRealWorldScenarios:
                     header, body = p3decode(binary_data)
 
                     if header and body:
-                        stats['decodable'] += 1
+                        stats["decodable"] += 1
 
                         # Check for transponder data
-                        if 'RESULT' in body:
-                            result = body['RESULT']
-                            if 'TRANSPONDER' in result or 'TRANSPONDER_ID' in result:
-                                stats['has_transponder'] += 1
-                            if 'RTC_TIME' in result:
-                                stats['has_rtc_time'] += 1
+                        if "RESULT" in body:
+                            result = body["RESULT"]
+                            if "TRANSPONDER" in result or "TRANSPONDER_ID" in result:
+                                stats["has_transponder"] += 1
+                            if "RTC_TIME" in result:
+                                stats["has_rtc_time"] += 1
 
                 except Exception:
                     pass
@@ -367,11 +374,15 @@ class TestRealWorldScenarios:
         # Print statistics
         print(f"\nData Quality Stats:")
         print(f"  Total messages: {stats['total']}")
-        print(f"  Valid format: {stats['valid_format']} ({stats['valid_format']/stats['total']*100:.1f}%)")
-        print(f"  Decodable: {stats['decodable']} ({stats['decodable']/stats['total']*100:.1f}%)")
+        print(
+            f"  Valid format: {stats['valid_format']} ({stats['valid_format']/stats['total']*100:.1f}%)"
+        )
+        print(
+            f"  Decodable: {stats['decodable']} ({stats['decodable']/stats['total']*100:.1f}%)"
+        )
         print(f"  Has transponder: {stats['has_transponder']}")
         print(f"  Has RTC time: {stats['has_rtc_time']}")
 
         # Assertions
-        assert stats['valid_format'] > 0, "Should have some valid messages"
-        assert stats['decodable'] > 0, "Should decode some messages"
+        assert stats["valid_format"] > 0, "Should have some valid messages"
+        assert stats["decodable"] > 0, "Should decode some messages"

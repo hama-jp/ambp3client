@@ -1,4 +1,5 @@
 """Pytest configuration and shared fixtures."""
+
 import pytest
 import tempfile
 import yaml
@@ -33,19 +34,19 @@ def sample_amb_data_full(test_data_dir):
 def temp_config_file():
     """Fixture creating a temporary config file."""
     config_data = {
-        'ip': '127.0.0.1',
-        'port': 5403,
-        'mysql_host': 'localhost',
-        'mysql_port': 3306,
-        'mysql_user': 'testuser',
-        'mysql_db': 'testdb',
-        'mysql_password': 'testpass',
-        'file': '/tmp/test.log',
-        'debug_file': '/tmp/debug.log',
-        'mysql_backend': True
+        "ip": "127.0.0.1",
+        "port": 5403,
+        "mysql_host": "localhost",
+        "mysql_port": 3306,
+        "mysql_user": "testuser",
+        "mysql_db": "testdb",
+        "mysql_password": "testpass",
+        "file": "/tmp/test.log",
+        "debug_file": "/tmp/debug.log",
+        "mysql_backend": True,
     }
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config_data, f)
         temp_file = f.name
 
@@ -53,6 +54,7 @@ def temp_config_file():
 
     # Cleanup
     import os
+
     try:
         os.unlink(temp_file)
     except:
@@ -62,13 +64,14 @@ def temp_config_file():
 @pytest.fixture
 def temp_log_file():
     """Fixture creating a temporary log file."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
         temp_file = f.name
 
     yield temp_file
 
     # Cleanup
     import os
+
     try:
         os.unlink(temp_file)
     except:
@@ -79,11 +82,11 @@ def temp_log_file():
 def sample_p3_messages():
     """Fixture providing sample P3 protocol messages."""
     return {
-        'get_time': "8e021000000000000000000000008f",
-        'passing_1': "8e021f00f3890000020001022800070216000c01760601008104131804008f",
-        'passing_2': "8e021f00895d0000020001022500070216000c01760601008104131804008f",
-        'passing_with_transponder': "8e02330053c800000100010451680200030473d75600040888f2fab51e8305000502b20006023400080200008104131804008f",
-        'heartbeat': "8e021f006e970000020001022700070216000c01770601008104131804008f",
+        "get_time": "8e021000000000000000000000008f",
+        "passing_1": "8e021f00f3890000020001022800070216000c01760601008104131804008f",
+        "passing_2": "8e021f00895d0000020001022500070216000c01760601008104131804008f",
+        "passing_with_transponder": "8e02330053c800000100010451680200030473d75600040888f2fab51e8305000502b20006023400080200008104131804008f",
+        "heartbeat": "8e021f006e970000020001022700070216000c01770601008104131804008f",
     }
 
 
@@ -91,35 +94,25 @@ def sample_p3_messages():
 def sample_decoded_data():
     """Fixture providing sample decoded P3 data."""
     return {
-        'header': {
-            'SOR': b'\x8e',
-            'Version': b'\x02',
-            'Length': b'\x00\x1f',
-            'CRC': b'\x00\xf3',
-            'Flags': b'\x89\x00',
-            'TOR': b'\x00\x00'
+        "header": {
+            "SOR": b"\x8e",
+            "Version": b"\x02",
+            "Length": b"\x00\x1f",
+            "CRC": b"\x00\xf3",
+            "Flags": b"\x89\x00",
+            "TOR": b"\x00\x00",
         },
-        'body': {
-            'RESULT': {
-                'TOR': 'PASSING',
-                'RTC_TIME': '12345678',
-                'TRANSPONDER': '1234'
-            }
-        }
+        "body": {
+            "RESULT": {"TOR": "PASSING", "RTC_TIME": "12345678", "TRANSPONDER": "1234"}
+        },
     }
 
 
 def pytest_configure(config):
     """Configure custom markers."""
-    config.addinivalue_line(
-        "markers", "integration: mark test as an integration test"
-    )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow running"
-    )
-    config.addinivalue_line(
-        "markers", "network: mark test as requiring network access"
-    )
+    config.addinivalue_line("markers", "integration: mark test as an integration test")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
+    config.addinivalue_line("markers", "network: mark test as requiring network access")
 
 
 def pytest_collection_modifyitems(config, items):
