@@ -18,8 +18,14 @@ class Connection:
     def close(self):
         self.socket.close()
 
-    def connect(self):
+    def connect(self, timeout=5.0):
+        """Connect to decoder with configurable timeout.
+
+        Args:
+            timeout: Socket timeout in seconds (default: 5.0)
+        """
         try:
+            self.socket.settimeout(timeout)
             self.socket.connect((self.ip, self.port))
         except ConnectionRefusedError as error:
             logger.error(
@@ -51,13 +57,23 @@ class Connection:
         return split_data
 
     def read(self, bufsize=10240):
+        """Read data from socket with timeout handling.
+
+        Args:
+            bufsize: Buffer size for recv (default: 10240)
+
+        Returns:
+            List of bytearrays containing split records
+        """
         try:
             data = self.socket.recv(bufsize)
-        except socket.error:
-            logger.error("Error reading from socket")
-            exit(1)
         except socket.timeout:
-            logger.error("Socket closed while reading")
+            logger.debug("Socket timeout while reading, no data available")
+            return []  # Return empty list on timeout
+        except socket.error as e:
+            logger.error(f"Error reading from socket: {e}")
+            exit(1)
+
         if data == b"":
             msg = "No data received, it seems socket got closed"
             logger.info("{}".format(msg))
