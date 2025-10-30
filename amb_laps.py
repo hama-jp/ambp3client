@@ -40,11 +40,13 @@ def list_to_dict(mylist, index=0):
 
 def mysql_connect(conf):
     try:
-        con = open_mysql_connection(user=conf['mysql_user'],
-                                    db=conf['mysql_db'],
-                                    password=conf['mysql_password'],
-                                    host=conf['mysql_host'],
-                                    port=conf['mysql_port'],)
+        con = open_mysql_connection(
+            user=conf["mysql_user"],
+            db=conf["mysql_db"],
+            password=conf["mysql_password"],
+            host=conf["mysql_host"],
+            port=conf["mysql_port"],
+        )
     except MysqlError as err:
         logging.error("Something went wrong: {}".format(err))
     if con is None:
@@ -61,7 +63,7 @@ def sql_write(mycon, query):
     cursor.execute(query)
     mysql.commit()
     logging.debug("insert query: {}, results: {}".format(query, cursor.rowcount))
-    return(cursor.rowcount)
+    return cursor.rowcount
 
 
 def sql_select(cursor, query):
@@ -71,8 +73,18 @@ def sql_select(cursor, query):
     return results
 
 
-class Pass():
-    def __init__(self, db_entry_id, pass_id, transponder_id, rtc_time, strength, hits, flags, decoder_id):
+class Pass:
+    def __init__(
+        self,
+        db_entry_id,
+        pass_id,
+        transponder_id,
+        rtc_time,
+        strength,
+        hits,
+        flags,
+        decoder_id,
+    ):
         self.db_entry_id = db_entry_id
         self.pass_id = pass_id
         self.transponder_id = transponder_id
@@ -83,9 +95,16 @@ class Pass():
         self.decoder_id = decoder_id
 
 
-class Heat():
-    def __init__(self, conf, decoder_time, heat_duration=DEFAULT_HEAT_DURATION, heat_cooldown=DEFAULT_HEAT_COOLDOWN,
-                 minimum_lap_time=DEFAULT_MINIMUM_LAP_TIME, race_flag=0):
+class Heat:
+    def __init__(
+        self,
+        conf,
+        decoder_time,
+        heat_duration=DEFAULT_HEAT_DURATION,
+        heat_cooldown=DEFAULT_HEAT_COOLDOWN,
+        minimum_lap_time=DEFAULT_MINIMUM_LAP_TIME,
+        race_flag=0,
+    ):
         self.conf = conf
         self.dt = decoder_time
         self.mysql = mysql_connect(conf)
@@ -102,7 +121,9 @@ class Heat():
             for result in results:
                 setting = result[0]
                 setting_value = result[1]
-                setting_value = int(setting_value) if IsInt(setting_value) else setting_value
+                setting_value = (
+                    int(setting_value) if IsInt(setting_value) else setting_value
+                )
                 logging.debug("Found {}: {}".format(setting, setting_value))
                 setattr(self, setting, setting_value)
         self.heat = self.get_heat()
@@ -115,13 +136,17 @@ class Heat():
         self.race_flag = self.heat[6]
         self.rtc_max_duration = self.heat[7]
         if self.rtc_max_duration is None:
-                self.rtc_max_duration = self.rtc_time_start + ((self.heat_duration + self.heat_cooldown) * 1000000)
+            self.rtc_max_duration = self.rtc_time_start + (
+                (self.heat_duration + self.heat_cooldown) * 1000000
+            )
         if bool(self.first_pass_id) is True:
             self.first_transponder = self.get_transponder(self.first_pass_id)
 
     def get_heat(self):
-        """ get's current running heat, if no heat is running will create one """
-        query = "select * from heats where heat_finished=0 order by heat_id desc limit 1"
+        """get's current running heat, if no heat is running will create one"""
+        query = (
+            "select * from heats where heat_finished=0 order by heat_id desc limit 1"
+        )
         result = sql_select(self.cursor, query)
         result_len = len(list(result))
         if result_len > 0:
@@ -129,7 +154,9 @@ class Heat():
             logging.debug("Found running heat {}".format(heat))
             return heat
         else:
-            self.first_pass_id, self.rtc_time_start, self.rtc_time_end = self.create_heat()
+            self.first_pass_id, self.rtc_time_start, self.rtc_time_end = (
+                self.create_heat()
+            )
             return self.get_heat()
 
     def is_running(self, heat_id):
@@ -145,7 +172,9 @@ class Heat():
             return True
 
     def get_pass_timestamp(self, pass_id):
-        return sql_select(self.cursor, "select rtc_time from passes where pass_id={}".format(pass_id))[0][0]
+        return sql_select(
+            self.cursor, "select rtc_time from passes where pass_id={}".format(pass_id)
+        )[0][0]
 
     def get_transponder(self, pass_id):
         query = "select transponder_id from passes where pass_id={}".format(pass_id)
@@ -157,7 +186,9 @@ class Heat():
         "process heat_passes"
         if bool(self.first_pass_id):
             sleep(0.5)
-            self.rtc_max_duration = self.rtc_time_start + ((self.heat_duration + self.heat_cooldown) * 1000000)
+            self.rtc_max_duration = self.rtc_time_start + (
+                (self.heat_duration + self.heat_cooldown) * 1000000
+            )
             self.first_transponder = self.get_transponder(self.first_pass_id)
             """ FIX ME heat_not_processed_passes_query MUST BE MORE SIMPLE """
             all_heat_passes_query = f"""select * from passes where pass_id >= {self.first_pass_id} and rtc_time <=
@@ -165,7 +196,9 @@ class Heat():
             heat_not_processed_passes_query = f"""select passes.* from ( {all_heat_passes_query} ) as passes left join laps on
 passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
             #  print(heat_not_processed_passes_query)
-            not_processed_passes = sql_select(self.cursor, heat_not_processed_passes_query)
+            not_processed_passes = sql_select(
+                self.cursor, heat_not_processed_passes_query
+            )
             if self.dt.decoder_time > self.rtc_time_end:
                 self.wave_finish_flag()
             if self.dt.decoder_time > self.rtc_max_duration:
@@ -186,7 +219,9 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
         result = sql_select(self.cursor, query)
         pass_id = result[0][0] if len(result) > 0 else "NULL"
         logging.debug(f"finish heat_id {self.heat_id}, with pass_id: {pass_id}")
-        query = "update heats set heat_finished=1, last_pass_id={} where heat_id = {}".format(pass_id, self.heat_id)
+        query = "update heats set heat_finished=1, last_pass_id={} where heat_id = {}".format(
+            pass_id, self.heat_id
+        )
         sql_write(self.mycon, query)
         self.heat_finished = 1
         self.heat_flag = 2
@@ -203,7 +238,10 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
             else:
                 self.previous_lap_times[pas.transponder_id] = 0
 
-        if pas.rtc_time - self.previous_lap_times[pas.transponder_id] > self.minimum_lap_time * 1000000:
+        if (
+            pas.rtc_time - self.previous_lap_times[pas.transponder_id]
+            > self.minimum_lap_time * 1000000
+        ):
             return True
         else:
             query = f"delete from passes where pass_id = {pas.pass_id}"
@@ -216,10 +254,12 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
         self.race_flag = 1
 
     def add_pass_to_laps(self, heat_id, pas):
-        lap = {"heat_id": heat_id,
-               "pass_id": pas.pass_id,
-               "transponder_id": pas.transponder_id,
-               "rtc_time": pas.rtc_time}
+        lap = {
+            "heat_id": heat_id,
+            "pass_id": pas.pass_id,
+            "transponder_id": pas.transponder_id,
+            "rtc_time": pas.rtc_time,
+        }
         keys = ", ".join(lap.keys())
         values = tuple(lap.values())
         if self.valid_lap_time(pas):
@@ -229,7 +269,7 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
             pass
 
     def create_heat(self):
-        """ waits for a new pass and creates a new HEAT
+        """waits for a new pass and creates a new HEAT
         Parameters:
         mycon: mysql connection and cursor tuple
         heat_duration: create heat with heat_duration
@@ -248,7 +288,9 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
             result = result[0][0]
             if len(result) > 0 and bool(int(result)):
                 green_flag_time = self.get_decoder_time()
-                logging.debug(f"Green Flag is: {result}! Race can start  after: {green_flag_time}")
+                logging.debug(
+                    f"Green Flag is: {result}! Race can start  after: {green_flag_time}"
+                )
                 break
             else:
                 logging.debug("Waiting for Green Flag")
@@ -268,11 +310,17 @@ and rtc_time > {green_flag_time} limit 1"""
                 self.first_pass_id = starting_pass.pass_id
                 self.rtc_time_start = starting_pass.rtc_time
                 self.rtc_time_end = self.rtc_time_start + (self.heat_duration * 1000000)
-                self.rtc_max_duration = self.rtc_time_start + ((self.heat_duration + self.heat_cooldown) * 1000000)
+                self.rtc_max_duration = self.rtc_time_start + (
+                    (self.heat_duration + self.heat_cooldown) * 1000000
+                )
                 logging.debug("last pass at {}".format(self.rtc_time_start))
-                columns = "first_pass_id, rtc_time_start, rtc_time_end, rtc_time_max_end"
+                columns = (
+                    "first_pass_id, rtc_time_start, rtc_time_end, rtc_time_max_end"
+                )
                 values = f"{self.first_pass_id}, {self.rtc_time_start}, {self.rtc_time_end}, {self.rtc_max_duration}"
-                logging.debug(f"creating new heat starting starting_pass: {starting_pass.pass_id}, heat_duration: {self.heat_duration}")
+                logging.debug(
+                    f"creating new heat starting starting_pass: {starting_pass.pass_id}, heat_duration: {self.heat_duration}"
+                )
                 insert_query = f"insert into heats ({columns}) values ({values})"
                 print(insert_query)
                 if sql_write(self.mycon, insert_query) > 0:
@@ -283,8 +331,14 @@ and rtc_time > {green_flag_time} limit 1"""
         query_number_of_racers_finished = f"""select count(transponder_id) from laps where heat_id={self.heat_id}
  and rtc_time > {self.rtc_time_end}"""
         number_of_racers_in_race = sql_select(self.cursor, query_number_of_racers)
-        number_of_racers_finished = sql_select(self.cursor, query_number_of_racers_finished)
-        if len(number_of_racers_in_race) > 0 and len(number_of_racers_finished) > 0 and number_of_racers_finished[0][0] >= number_of_racers_in_race[0][0]:
+        number_of_racers_finished = sql_select(
+            self.cursor, query_number_of_racers_finished
+        )
+        if (
+            len(number_of_racers_in_race) > 0
+            and len(number_of_racers_finished) > 0
+            and number_of_racers_finished[0][0] >= number_of_racers_in_race[0][0]
+        ):
             return True
         else:
             return False
@@ -294,19 +348,25 @@ and rtc_time > {green_flag_time} limit 1"""
         current_transponder_time = self.get_decoder_time()
         while self.is_running(self.heat_id):
             if self.race_flag > 0:
-                """ if race flag is 1 or 2 non-green, check if we are still racing and exit """
+                """if race flag is 1 or 2 non-green, check if we are still racing and exit"""
                 """ wait for MAX time and the finish teh race """
                 if self.race_flag == 2:
-                    logging.debug(" #0#0#0#0#0#0 FIRST The race is over, exiting #0#0#0#0#0#0#0#0#)")
+                    logging.debug(
+                        " #0#0#0#0#0#0 FIRST The race is over, exiting #0#0#0#0#0#0#0#0#)"
+                    )
                     break
 
                 if self.check_if_all_finished():
-                    logging.debug(" #0#0#0#0#0#0 EVERY ONE FINSIHED The race is over, exiting #0#0#0#0#0#0#0#0#)")
+                    logging.debug(
+                        " #0#0#0#0#0#0 EVERY ONE FINSIHED The race is over, exiting #0#0#0#0#0#0#0#0#)"
+                    )
                     self.finish_heat()
                     break
 
                 if self.get_decoder_time() > self.rtc_max_duration:
-                    logging.debug(" #0#0#0#0#0#0 The race is over, exiting #0#0#0#0#0#0#0#0#)")
+                    logging.debug(
+                        " #0#0#0#0#0#0 The race is over, exiting #0#0#0#0#0#0#0#0#)"
+                    )
                     self.finish_heat()
                     break
 
@@ -322,12 +382,16 @@ and rtc_time > {green_flag_time} limit 1"""
             sleep(1)
             logging.error("Waiting on time")
         else:
-            print(f"################### {self.dt.decoder_time} #####################################")
+            print(
+                f"################### {self.dt.decoder_time} #####################################"
+            )
             return self.dt.decoder_time
 
     def get_kart_id(self, transponder_id):
-        """ converts transpodner name to  kart number and kart name """
-        query = "select name, kart_number from karts where transponder_id = {}".format(transponder_id)
+        """converts transpodner name to  kart number and kart name"""
+        query = "select name, kart_number from karts where transponder_id = {}".format(
+            transponder_id
+        )
         result = sql_select(self.mycon, query)
         if len(result) == 1:
             return result[0]
@@ -336,7 +400,7 @@ and rtc_time > {green_flag_time} limit 1"""
 
 
 def main():
-    """ IMPLEMENT CONNECT TO CLIENT PYTHON AND GET TIME ALL THE TIME """
+    """IMPLEMENT CONNECT TO CLIENT PYTHON AND GET TIME ALL THE TIME"""
     config = get_args()
     conf = config.conf
     logging.basicConfig(level=logging.DEBUG)

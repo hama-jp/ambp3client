@@ -12,7 +12,9 @@ def table():
     for i in range(256):
         crc = i << 8
         for j in range(8):
-            crc = ((0xFFFF & crc << 1) ^ (POLY if ((crc & 0x8000) != 0) else 0)) & 0xffff
+            crc = (
+                (0xFFFF & crc << 1) ^ (POLY if ((crc & 0x8000) != 0) else 0)
+            ) & 0xFFFF
         crctable.append(crc)
     return crctable
 
@@ -25,7 +27,7 @@ def calc(msg, tbl):
 
     crc = START
     for b in ba:
-        crc = 0xffff & (tbl[(crc >> 8) & 0xff] ^ (0xffff & crc << 8) ^ b)
+        crc = 0xFFFF & (tbl[(crc >> 8) & 0xFF] ^ (0xFFFF & crc << 8) ^ b)
     return (crc << 8 & 0xFFFF) | (crc >> 8)
 
 

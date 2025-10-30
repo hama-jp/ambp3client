@@ -5,3 +5,12 @@
 **out.log
 local_conf.yaml
 test_server/out.log*
+
+# Testing
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+test-results.xml
+bandit-report.json
+.mypy_cache/

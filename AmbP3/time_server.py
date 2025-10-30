@@ -5,10 +5,10 @@ import time
 import socketserver
 
 TIME_PORT = 9999
-TIME_IP = '127.0.0.1'
+TIME_IP = "127.0.0.1"
 
 
-class RefreshTime():
+class RefreshTime:
     def __init__(self, connection, refresh_interval=30):
         self.refresh_interval = refresh_interval
         self.connection = connection
@@ -33,8 +33,8 @@ class TCPServer(socketserver.BaseRequestHandler):
         socketserver.BaseRequestHandler.__init__(h, request, client_address, server)
 
     def handle(self):
-        """ accepts as input RTC timestamp e.g. 1592148824541000
-            and sends every interval seconds a incremented TS """
+        """accepts as input RTC timestamp e.g. 1592148824541000
+        and sends every interval seconds a incremented TS"""
         # while True:
         #     ts_send = self.dt.decoder_time + (round(time.monotonic() * 1000000) - self.dt.monotonic_ts)
         #     msg = f"{ts_send}\n"
@@ -43,7 +43,9 @@ class TCPServer(socketserver.BaseRequestHandler):
         #     sleep(self.interval)
         while True:
             try:
-                ts_send = self.dt.decoder_time + (round(time.monotonic() * 1000000) - self.dt.monotonic_ts)
+                ts_send = self.dt.decoder_time + (
+                    round(time.monotonic() * 1000000) - self.dt.monotonic_ts
+                )
                 msg = f"{ts_send}\n"
                 self.data = msg.encode()
                 self.request.sendall(self.data)
@@ -56,7 +58,7 @@ class TCPServer(socketserver.BaseRequestHandler):
                 break
 
 
-class DecoderTime():
+class DecoderTime:
     def __init__(self, decoder_time):
         self.decoder_time = decoder_time
         self.monotonic_ts = round(time.monotonic() * 1000000)
@@ -67,7 +69,7 @@ class DecoderTime():
 
 
 class TimeServer(object):
-    def __init__(self, dt, ADDR='127.0.0.1', PORT=9999, interval=1):
+    def __init__(self, dt, ADDR="127.0.0.1", PORT=9999, interval=1):
         self.dt = dt
         self.ADDR = ADDR
         self.PORT = PORT
@@ -80,7 +82,9 @@ class TimeServer(object):
         TCPServer.dt = self.dt
         TCPServer.interval = self.interval
         socketserver.TCPServer.allow_reuse_address = True
-        self.server = socketserver.TCPServer((self.ADDR, self.PORT), TCPServer(self.dt, 0.5))
+        self.server = socketserver.TCPServer(
+            (self.ADDR, self.PORT), TCPServer(self.dt, 0.5)
+        )
         self.server.serve_forever()
 
     def shutdown(self):

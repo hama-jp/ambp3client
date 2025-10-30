@@ -7,7 +7,7 @@ from AmbP3.time_server import TIME_IP
 from AmbP3.time_server import DecoderTime
 
 
-class TCPClient():
+class TCPClient:
     def __init__(self, dt, address, port, interval, retry_connect=30):
         self.dt = dt
         self.interval = interval
@@ -54,13 +54,15 @@ class TCPClient():
 
 class TimeClient(object):
     def __init__(self, dt, ADDR=TIME_IP, PORT=TIME_PORT, interval=1, retry_connect=30):
-        """ dt is DecoderTime instance """
+        """dt is DecoderTime instance"""
         self.dt = dt
         self.ADDR = ADDR
         self.PORT = PORT
         self.retry_connect = retry_connect
         self.interval = interval
-        self.tcpclient = TCPClient(self.dt, ADDR, PORT, interval, retry_connect=self.retry_connect)
+        self.tcpclient = TCPClient(
+            self.dt, ADDR, PORT, interval, retry_connect=self.retry_connect
+        )
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
         thread.start()

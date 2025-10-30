@@ -7,16 +7,38 @@ from AmbP3.decoder import hex_to_binary
 from AmbP3.decoder import p3decode
 
 INPUT_FILE = "amb.out"
-ADDR = '127.0.0.1'
+ADDR = "127.0.0.1"
 PORT = 12001
 
 
 def get_args():
     parser = ArgumentParser()
-    parser.add_argument("INPUT_FILE", help="amb.out HEX file location", default=INPUT_FILE, nargs='?')
-    parser.add_argument("-l", "--listen-address", help="IP address to bind on",  default=ADDR, dest='ADDR')
-    parser.add_argument("-p", "--listen-port", help="PORT to bind on",  default=PORT, dest='PORT', type=int)
-    parser.add_argument("-i", "--interval", help="interval to send data", default=0.5, dest='INTERVAL', type=float)
+    parser.add_argument(
+        "INPUT_FILE", help="amb.out HEX file location", default=INPUT_FILE, nargs="?"
+    )
+    parser.add_argument(
+        "-l",
+        "--listen-address",
+        help="IP address to bind on",
+        default=ADDR,
+        dest="ADDR",
+    )
+    parser.add_argument(
+        "-p",
+        "--listen-port",
+        help="PORT to bind on",
+        default=PORT,
+        dest="PORT",
+        type=int,
+    )
+    parser.add_argument(
+        "-i",
+        "--interval",
+        help="interval to send data",
+        default=0.5,
+        dest="INTERVAL",
+        type=float,
+    )
     args = parser.parse_args()
     return args
 
@@ -38,7 +60,9 @@ def send_net(ADDR, PORT, INPUT_FILE, INTERVAL=0.5):
         while True:
             data = "{}".format(fd.readline()).rstrip()
             data_bytes = bytes.fromhex(data)
-            last_entry_timestamp = int(p3decode(hex_to_binary(data))[1]['RESULT']['RTC_TIME'], 16)
+            last_entry_timestamp = int(
+                p3decode(hex_to_binary(data))[1]["RESULT"]["RTC_TIME"], 16
+            )
             print(last_entry_timestamp)
             try:
                 if data_bytes is not None:
