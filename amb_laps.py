@@ -57,19 +57,45 @@ def mysql_connect(conf):
     con.autocommit = True
 
 
-def sql_write(mycon, query):
+def sql_write(mycon, query, params=None):
+    """Execute a write query with optional parameters.
+
+    Args:
+        mycon: Tuple of (mysql_connection, cursor)
+        query: SQL query with %s placeholders for parameters
+        params: Tuple of parameters to substitute into query (optional)
+
+    Returns:
+        Number of affected rows
+    """
     mysql = mycon[0]
     cursor = mycon[1]
-    cursor.execute(query)
+    if params:
+        cursor.execute(query, params)
+    else:
+        cursor.execute(query)
     mysql.commit()
-    logging.debug("insert query: {}, results: {}".format(query, cursor.rowcount))
+    logging.debug("insert query: {}, params: {}, results: {}".format(query, params, cursor.rowcount))
     return cursor.rowcount
 
 
-def sql_select(cursor, query):
-    cursor.execute(query)
+def sql_select(cursor, query, params=None):
+    """Execute a select query with optional parameters.
+
+    Args:
+        cursor: Database cursor
+        query: SQL query with %s placeholders for parameters
+        params: Tuple of parameters to substitute into query (optional)
+
+    Returns:
+        List of result tuples
+    """
+    if params:
+        cursor.execute(query, params)
+    else:
+        cursor.execute(query)
     results = cursor.fetchall()
-    logging.debug("select query: {}, results: {}".format(query, cursor.rowcount))
+    logging.debug("select query: {}, params: {}, results: {}".format(query, params, cursor.rowcount))
     return results
 
 
@@ -160,8 +186,8 @@ class Heat:
             return self.get_heat()
 
     def is_running(self, heat_id):
-        query = f"select heat_finished from heats where heat_id = {heat_id}"
-        result = sql_select(self.cursor, query)
+        query = "select heat_finished from heats where heat_id = %s"
+        result = sql_select(self.cursor, query, (heat_id,))
         result_len = len(list(result))
         if result_len > 0:
             heat_finished = result[0][0]
@@ -173,12 +199,12 @@ class Heat:
 
     def get_pass_timestamp(self, pass_id):
         return sql_select(
-            self.cursor, "select rtc_time from passes where pass_id={}".format(pass_id)
+            self.cursor, "select rtc_time from passes where pass_id=%s", (pass_id,)
         )[0][0]
 
     def get_transponder(self, pass_id):
-        query = "select transponder_id from passes where pass_id={}".format(pass_id)
-        result = sql_select(self.cursor, query)[0][0]
+        query = "select transponder_id from passes where pass_id=%s"
+        result = sql_select(self.cursor, query, (pass_id,))[0][0]
         transponder_id = result
         return transponder_id
 
@@ -191,13 +217,15 @@ class Heat:
             )
             self.first_transponder = self.get_transponder(self.first_pass_id)
             """ FIX ME heat_not_processed_passes_query MUST BE MORE SIMPLE """
-            all_heat_passes_query = f"""select * from passes where pass_id >= {self.first_pass_id} and rtc_time <=
-{self.rtc_max_duration} union all ( select * from passes where rtc_time > {self.rtc_max_duration} limit 1 )"""
-            heat_not_processed_passes_query = f"""select passes.* from ( {all_heat_passes_query} ) as passes left join laps on
-passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
+            all_heat_passes_query = """select * from passes where pass_id >= %s and rtc_time <= %s
+union all ( select * from passes where rtc_time > %s limit 1 )"""
+            # nosec B608 - Safe: Formatting is used only to insert a parameterized subquery, not user data
+            heat_not_processed_passes_query = """select passes.* from ( {} ) as passes left join laps on
+passes.pass_id = laps.pass_id where laps.heat_id is NULL""".format(all_heat_passes_query)
             #  print(heat_not_processed_passes_query)
             not_processed_passes = sql_select(
-                self.cursor, heat_not_processed_passes_query
+                self.cursor, heat_not_processed_passes_query,
+                (self.first_pass_id, self.rtc_max_duration, self.rtc_max_duration)
             )
             if self.dt.decoder_time > self.rtc_time_end:
                 self.wave_finish_flag()
@@ -215,24 +243,27 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
                         self.wave_finish_flag()
 
     def finish_heat(self):
-        query = f"select pass_id from laps where heat_id={self.heat_id} order by pass_id desc limit 1"
-        result = sql_select(self.cursor, query)
-        pass_id = result[0][0] if len(result) > 0 else "NULL"
+        query = "select pass_id from laps where heat_id=%s order by pass_id desc limit 1"
+        result = sql_select(self.cursor, query, (self.heat_id,))
+        pass_id = result[0][0] if len(result) > 0 else None
         logging.debug(f"finish heat_id {self.heat_id}, with pass_id: {pass_id}")
-        query = "update heats set heat_finished=1, last_pass_id={} where heat_id = {}".format(
-            pass_id, self.heat_id
-        )
-        sql_write(self.mycon, query)
+        if pass_id is not None:
+            query = "update heats set heat_finished=1, last_pass_id=%s where heat_id = %s"
+            sql_write(self.mycon, query, (pass_id, self.heat_id))
+        else:
+            query = "update heats set heat_finished=1, last_pass_id=NULL where heat_id = %s"
+            sql_write(self.mycon, query, (self.heat_id,))
         self.heat_finished = 1
         self.heat_flag = 2
 
     def valid_lap_time(self, pas):
         self.previous_lap_times = {}
-        previous_lap_query = f"""select rtc_time from laps where heat_id={self.heat_id}
- and transponder_id={pas.transponder_id} and pass_id<{pas.pass_id} order by pass_id desc limit 1"""
+        previous_lap_query = """select rtc_time from laps where heat_id=%s
+ and transponder_id=%s and pass_id<%s order by pass_id desc limit 1"""
 
         if pas.transponder_id not in self.previous_lap_times:
-            qresult = sql_select(self.cursor, previous_lap_query)
+            qresult = sql_select(self.cursor, previous_lap_query,
+                               (self.heat_id, pas.transponder_id, pas.pass_id))
             if len(qresult) > 0:
                 self.previous_lap_times[pas.transponder_id] = qresult[0][0]
             else:
@@ -244,13 +275,13 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
         ):
             return True
         else:
-            query = f"delete from passes where pass_id = {pas.pass_id}"
-            sql_write(self.mycon, query)
+            query = "delete from passes where pass_id = %s"
+            sql_write(self.mycon, query, (pas.pass_id,))
             return False
 
     def wave_finish_flag(self):
-        query = f"update  heats set race_flag = 1 where heat_id={self.heat_id}"
-        sql_write(self.mycon, query)
+        query = "update  heats set race_flag = 1 where heat_id=%s"
+        sql_write(self.mycon, query, (self.heat_id,))
         self.race_flag = 1
 
     def add_pass_to_laps(self, heat_id, pas):
@@ -261,10 +292,12 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
             "rtc_time": pas.rtc_time,
         }
         keys = ", ".join(lap.keys())
+        placeholders = ", ".join(["%s"] * len(lap))
         values = tuple(lap.values())
         if self.valid_lap_time(pas):
-            query = "insert into laps ({}) values {}".format(keys, values)
-            sql_write(self.mycon, query)
+            # nosec B608 - Safe: keys are hardcoded dict keys, not user input
+            query = "insert into laps ({}) values ({})".format(keys, placeholders)
+            sql_write(self.mycon, query, values)
         else:
             pass
 
@@ -297,9 +330,9 @@ passes.pass_id = laps.pass_id where laps.heat_id is NULL"""
             sleep(SLEEP_TIME)
 
         while True:
-            query = f"""select * from passes where pass_id > ( select pass_id from laps order by pass_id desc limit 1 )
-and rtc_time > {green_flag_time} limit 1"""
-            result = sql_select(cursor, query)
+            query = """select * from passes where pass_id > ( select pass_id from laps order by pass_id desc limit 1 )
+and rtc_time > %s limit 1"""
+            result = sql_select(cursor, query, (green_flag_time,))
 
             if not len(result) > 0:
                 sleep(SLEEP_TIME)
@@ -317,22 +350,23 @@ and rtc_time > {green_flag_time} limit 1"""
                 columns = (
                     "first_pass_id, rtc_time_start, rtc_time_end, rtc_time_max_end"
                 )
-                values = f"{self.first_pass_id}, {self.rtc_time_start}, {self.rtc_time_end}, {self.rtc_max_duration}"
+                values = (self.first_pass_id, self.rtc_time_start, self.rtc_time_end, self.rtc_max_duration)
                 logging.debug(
                     f"creating new heat starting starting_pass: {starting_pass.pass_id}, heat_duration: {self.heat_duration}"
                 )
-                insert_query = f"insert into heats ({columns}) values ({values})"
+                # nosec B608 - Safe: columns is a hardcoded string, not user input
+                insert_query = "insert into heats ({}) values (%s, %s, %s, %s)".format(columns)
                 print(insert_query)
-                if sql_write(self.mycon, insert_query) > 0:
+                if sql_write(self.mycon, insert_query, values) > 0:
                     return starting_pass.pass_id, self.rtc_time_start, self.rtc_time_end
 
     def check_if_all_finished(self):
-        query_number_of_racers = f"select count(distinct transponder_id) from laps where heat_id={self.heat_id}"
-        query_number_of_racers_finished = f"""select count(transponder_id) from laps where heat_id={self.heat_id}
- and rtc_time > {self.rtc_time_end}"""
-        number_of_racers_in_race = sql_select(self.cursor, query_number_of_racers)
+        query_number_of_racers = "select count(distinct transponder_id) from laps where heat_id=%s"
+        query_number_of_racers_finished = """select count(transponder_id) from laps where heat_id=%s
+ and rtc_time > %s"""
+        number_of_racers_in_race = sql_select(self.cursor, query_number_of_racers, (self.heat_id,))
         number_of_racers_finished = sql_select(
-            self.cursor, query_number_of_racers_finished
+            self.cursor, query_number_of_racers_finished, (self.heat_id, self.rtc_time_end)
         )
         if (
             len(number_of_racers_in_race) > 0
@@ -389,10 +423,8 @@ and rtc_time > {green_flag_time} limit 1"""
 
     def get_kart_id(self, transponder_id):
         """converts transpodner name to  kart number and kart name"""
-        query = "select name, kart_number from karts where transponder_id = {}".format(
-            transponder_id
-        )
-        result = sql_select(self.mycon, query)
+        query = "select name, kart_number from karts where transponder_id = %s"
+        result = sql_select(self.cursor, query, (transponder_id,))
         if len(result) == 1:
             return result[0]
         else:
