@@ -63,9 +63,8 @@ def dict_to_sqlquery(data_dict, table):
     columns_string = "( {} )".format(",".join(data_dict.keys()))
     values_string = "( {} )".format(",".join(["%s"] * len(data_dict.values())))
     # Table and column names are validated against whitelist above
-    sql = """INSERT INTO {} {} VALUES {}""".format(
-        table, columns_string, values_string
-    )  # nosec B608
+    # nosec B608: SQL string formatting is safe here due to whitelist validation
+    sql = """INSERT INTO {} {} VALUES {}""".format(table, columns_string, values_string)
     return sql
 
 
