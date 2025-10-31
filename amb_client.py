@@ -67,9 +67,7 @@ def main():
         try:
             for data in connection.read():
                 decoded_data = data_to_ascii(data)
-                decoded_header, decoded_body = p3decode(
-                    data
-                )  # NEED TO REPLACE WITH LOGGING
+                decoded_header, decoded_body = p3decode(data)
                 if (
                     decoded_body
                     and "RESULT" in decoded_body
@@ -107,10 +105,9 @@ def main():
                 raw_log_delim = "##############################################"
                 for data in connection.read():
                     decoded_data = data_to_ascii(data)
-                    Write.to_file(decoded_data, amb_raw)  # REPLACE BY LOGGING
-                    decoded_header, decoded_body = p3decode(
-                        data
-                    )  # NEED TO REPLACE WITH LOGGING
+                    Write.to_file(decoded_data, amb_raw)
+                    decoded_header, decoded_body = p3decode(data)
+                    logger.debug(f"Decoded data - Header: {decoded_header}, Body: {decoded_body}")
                     header_msg = "Decoded Header: {}\n".format(
                         dict_to_ascii(decoded_header)
                     )
