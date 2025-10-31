@@ -42,7 +42,7 @@ class Connection:
 
     def split_records(self, data):
         """some times server send 2 records in one message
-        concatinated, you can find those by '8f8e' EOR and SOR next to eahc other"""
+        concatinated, you can find those by '8f8e' EOR and SOR next to each other"""
         byte_array = bytearray(data)
         size = len(byte_array)
         split_data = [bytearray()]
@@ -148,19 +148,6 @@ def p3decode(data):
         escaped_data.insert(0, 142)  # INSERT THE SOR Start of Record
         escaped_data.append(143)  # INSERT THE EOR End of Record
         return bytes(escaped_data)
-
-    def _lunescape(data):
-        "If the value is 0x8d, 0x8e or 0x8f and it's not the first or last byte of the message,\
-         the value is prefixed/escaped by 0x8D followed by the byte value plus 0x20."
-        new_data = bytearray(data)
-        for byte_number in list(range(1, len(data) - 1)):
-            byte = data[byte_number : byte_number + 1]
-            if codecs.encode(byte, "hex") in [b"8d", b"8e", b"8f"]:
-                new_data[byte_number + 1] = data[byte_number + 1] - int("0x20", 16)
-                del new_data[byte_number]
-
-        data = bytes(new_data)
-        return data
 
     def _check_length(data):
         "check if data is of correct length"

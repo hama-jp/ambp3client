@@ -77,7 +77,7 @@ class TimeClient(object):
                     self.dt.decoder_time = data
                 except (ValueError, IndexError) as e:
                     self.dt.decoder_time = 0
-                    print(f"Failed to reada data: {e}")
+                    print(f"Failed to read data: {e}")
                     print(f"reconnecting")
                     self.tcpclient.connected = False
             sleep(0.5)
