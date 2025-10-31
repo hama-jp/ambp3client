@@ -13,13 +13,13 @@ from AmbP3.time_server import TIME_PORT
 # PASSES = [ "db_entry_id", "pass_id", "transponder_id", "rtc_time", "strength", "hits", "flags", "decoder_id" ]
 DEFAULT_HEAT_DURATION = 590
 DEFAULT_HEAT_COOLDOWN = 90
-DEAFULT_HEAT_INTERVAL = 90
+DEFAULT_HEAT_INTERVAL = 90
 DEFAULT_MINIMUM_LAP_TIME = 10
 DEFAULT_HEAT_SETTINGS = ["heat_duration", "heat_cooldown"]
 MAX_GET_TIME_ATTEMPTS = 30
 
 
-def IsInt(string):
+def is_int(string):
     try:
         int(string)
         return True
@@ -156,7 +156,7 @@ class Heat:
                 setting = result[0]
                 setting_value = result[1]
                 setting_value = (
-                    int(setting_value) if IsInt(setting_value) else setting_value
+                    int(setting_value) if is_int(setting_value) else setting_value
                 )
                 logging.debug("Found {}: {}".format(setting, setting_value))
                 setattr(self, setting, setting_value)

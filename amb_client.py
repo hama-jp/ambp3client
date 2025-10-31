@@ -103,7 +103,7 @@ def main():
                     Write.to_file(decoded_data, amb_raw)  # REPLACE BY LOGGING
                     decoded_header, decoded_body = p3decode(
                         data
-                    )  # NEED OT REPLACE WITH LOGGING
+                    )  # NEED TO REPLACE WITH LOGGING
                     header_msg = "Decoded Header: {}\n".format(
                         dict_to_ascii(decoded_header)
                     )
@@ -116,8 +116,7 @@ def main():
                             decoder_time.set_decoder_time(
                                 int(decoded_body["RESULT"]["RTC_TIME"], 16)
                             )
-                    sleep(0.1)
-                sleep(0.1)
+                sleep(0.2)
     except KeyboardInterrupt:
         print("Closing")
         exit(0)
