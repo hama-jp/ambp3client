@@ -3,9 +3,14 @@ from time import sleep
 import threading
 import time
 import socketserver
+from .logs import Logg
 
+logger = Logg.create_logger("time_server")
+
+# Time server configuration
 TIME_PORT = 9999
 TIME_IP = "127.0.0.1"
+DEFAULT_INTERVAL = 0.5  # Default interval for TCP server updates in seconds
 
 
 class RefreshTime:
@@ -17,7 +22,7 @@ class RefreshTime:
         thread.start()
 
     def run(self):
-        print("Requesting Decoder Time")
+        logger.info("Requesting Decoder Time")
         get_time_msg = bytes.fromhex("8E0000005BEB000024000100040005008F")
         self.connection.write(get_time_msg)
         sleep(self.refresh_interval)
@@ -51,10 +56,10 @@ class TCPServer(socketserver.BaseRequestHandler):
                 self.request.sendall(self.data)
                 sleep(self.interval)
             except (ConnectionResetError, BrokenPipeError) as error:
-                print("socket connection error: {}".format(error))
+                logger.error("socket connection error: {}".format(error))
                 break
             except (KeyboardInterrupt, TypeError) as error:
-                print("closing socket, connection: {}".format(error))
+                logger.info("closing socket, connection: {}".format(error))
                 break
 
 
@@ -83,7 +88,7 @@ class TimeServer(object):
         TCPServer.interval = self.interval
         socketserver.TCPServer.allow_reuse_address = True
         self.server = socketserver.TCPServer(
-            (self.ADDR, self.PORT), TCPServer(self.dt, 0.5)
+            (self.ADDR, self.PORT), TCPServer(self.dt, DEFAULT_INTERVAL)
         )
         self.server.serve_forever()
 
@@ -97,5 +102,5 @@ class TimeServer(object):
 if __name__ == "__main__":
     bg = TimeServer(3)
     while True:
-        print("Doing stuff")
+        logger.debug("Doing stuff")
         sleep(1)

@@ -5,6 +5,9 @@ import socket
 from AmbP3.time_server import TIME_PORT
 from AmbP3.time_server import TIME_IP
 from AmbP3.time_server import DecoderTime
+from .logs import Logg
+
+logger = Logg.create_logger("time_client")
 
 
 class TCPClient:
@@ -21,18 +24,18 @@ class TCPClient:
         while retry > 1:
             sleep(0.5)
             try:
-                print(f"connecting, retry left {retry}")
+                logger.info(f"connecting, retry left {retry}")
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect(self.server_address)
                 self.connected = True
                 retry -= 1
                 break
             except (socket.error, socket.timeout) as e:
-                print(f"connect failed: {e}")
+                logger.error(f"connect failed: {e}")
                 self.connected = False
                 retry -= 1
         else:
-            print("Can not connect, exiting")
+            logger.error("Can not connect, exiting")
             exit(1)
 
     def read(self):
@@ -45,7 +48,7 @@ class TCPClient:
                 retry -= 1
                 break
             except (socket.error, socket.timeout) as e:
-                print(f"read failed, reconnecting: {e}")
+                logger.error(f"read failed, reconnecting: {e}")
                 self.connected = False
                 retry -= 1
                 self.connect()
@@ -77,8 +80,8 @@ class TimeClient(object):
                     self.dt.decoder_time = data
                 except (ValueError, IndexError) as e:
                     self.dt.decoder_time = 0
-                    print(f"Failed to read data: {e}")
-                    print(f"reconnecting")
+                    logger.error(f"Failed to read data: {e}")
+                    logger.info(f"reconnecting")
                     self.tcpclient.connected = False
             sleep(0.5)
 
@@ -87,5 +90,5 @@ if __name__ == "__main__":
     dt = DecoderTime(1)
     bg = TimeClient(dt)
     while True:
-        print("Doing stuff")
+        logger.debug("Doing stuff")
         sleep(1)

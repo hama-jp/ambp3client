@@ -1,5 +1,8 @@
 import yaml
 from argparse import ArgumentParser
+from .logs import Logg
+
+logger = Logg.create_logger("config")
 
 DEFAULT_PORT = 5403
 DEFAULT_IP = "127.0.0.1"
@@ -30,8 +33,8 @@ class Config:
                 if v is None:
                     del cli_args_dict[k]
             conf = {**DefaultConfig, **config_from_file, **cli_args_dict}
-            print(f"args: {cli_args_dict}")
-            print(f"CONF: {conf}")
+            logger.debug(f"args: {cli_args_dict}")
+            logger.debug(f"CONF: {conf}")
             self.conf = conf
             self.ip = conf["ip"]
             self.port = conf["port"]
