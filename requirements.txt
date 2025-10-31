@@ -1,6 +1,6 @@
 # Core dependencies
 mysql-connector-python>=8.0.33
-PyYAML>=5.4
+PyYAML>=6.0
 
 # IPython dependencies (updated for Python 3.9+)
 ipython>=8.0.0

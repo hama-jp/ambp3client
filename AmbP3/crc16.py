@@ -2,6 +2,9 @@
 
 from sys import argv
 from sys import exit
+from .logs import Logg
+
+logger = Logg.create_logger("crc16")
 
 POLY = 0x1021
 START = 0xFFFF
@@ -23,7 +26,7 @@ def calc(msg, tbl):
     try:
         ba = bytearray.fromhex(msg)
     except ValueError:
-        print(f"msg: {msg} can not be evaluated as hex")
+        logger.error(f"msg: {msg} can not be evaluated as hex")
 
     crc = START
     for b in ba:
@@ -33,9 +36,9 @@ def calc(msg, tbl):
 
 if __name__ == "__main__":
     if len(argv) < 2:
-        print("provide argument string represenation of a hex msg")
+        logger.error("provide argument string represenation of a hex msg")
         exit(1)
     else:
         msg = argv[1]
         result = hex(calc(msg, table()))
-        print(f"msg: {msg}\nresult:{result}")
+        logger.info(f"msg: {msg}\nresult:{result}")

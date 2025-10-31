@@ -2,6 +2,12 @@ from time import time
 from sys import exit
 from .decoder import bin_to_decimal
 from mysql import connector as mysqlconnector
+from .logs import Logg
+
+logger = Logg.create_logger("write")
+
+# Database query timeout in seconds
+QUERY_TIMEOUT_SECONDS = 300
 
 
 def open_mysql_connection(
@@ -14,7 +20,7 @@ def open_mysql_connection(
         sql_con.autocommit = True
         return sql_con
     except mysqlconnector.errors.ProgrammingError as e:
-        print("DB connection failed: {}".format(e))
+        logger.error("DB connection failed: {}".format(e))
         return None
 
 
@@ -33,9 +39,9 @@ class Write:
                 file_handler.write(f"\n{data}")
                 file_handler.flush()
             except IOError:
-                print("Can not write to {}".format(file_handler.name))
+                logger.error("Can not write to {}".format(file_handler.name))
         else:
-            print("{} is not a filehandler".format(file_handler))
+            logger.error("{} is not a filehandler".format(file_handler))
 
     @staticmethod
     def passing_to_mysql(my_cursor, result, table="passes"):
@@ -57,7 +63,7 @@ class Write:
                     my_value = bin_to_decimal(result[value])
                     mysql_insert[my_key] = my_value
         query = dict_to_sqlquery(mysql_insert, table)
-        print("inserting: {}:".format(list(mysql_insert.values())))
+        logger.info("inserting: {}:".format(list(mysql_insert.values())))
         my_cursor.execute(query, list(mysql_insert.values()))
 
 
@@ -71,26 +77,26 @@ class Cursor(object):
     def reconnect(self):
         self.reconnect_counter += 1
         if self.reconnect_counter < 10:
-            print("Reconnecting to DB. Attempt: {}".format(self.reconnect_counter))
+            logger.info("Reconnecting to DB. Attempt: {}".format(self.reconnect_counter))
             try:
                 self.db.disconnect()
                 self.db.reconnect(attempts=30, delay=1)
             except mysqlconnector.errors.OperationalError as e:
-                print("ERROR: {}".format(e))
+                logger.error("ERROR: {}".format(e))
             except (
                 mysqlconnector.errors.IntegrityError,
                 mysqlconnector.errors.InterfaceError,
             ) as e:
-                print("ERROR: {}".format(e))
+                logger.error("ERROR: {}".format(e))
         else:
-            print("Can not connect to DB, exiting")
+            logger.error("Can not connect to DB, exiting")
             exit(1)
         self.cursor = self.db.cursor()
 
     def execute(self, *args, **kwargs):
         try:
             time_since_last_query = int(time()) - self.time_stamp
-            if time_since_last_query < 300:
+            if time_since_last_query < QUERY_TIMEOUT_SECONDS:
                 # print("time since last query: {}".format(time_since_last_query))
                 # print("autocommit: {}".format(self.db.autocommit))
                 result = self.cursor.execute(*args, **kwargs)
@@ -98,21 +104,21 @@ class Cursor(object):
                 self.reconnect_counter = 0
                 return result
             else:
-                print("time since last query {} expired".format(time_since_last_query))
+                logger.info("time since last query {} expired".format(time_since_last_query))
                 self.reconnect()
                 result = self.cursor.execute(*args, **kwargs)
                 self.time_stamp = int(time())
                 self.reconnect_counter = 0
                 return result
         except mysqlconnector.errors.OperationalError as e:
-            print("ERROR: {}. RECONNECTING".format(e))
+            logger.error("ERROR: {}. RECONNECTING".format(e))
             self.reconnect()
             return self.cursor.execute(*args, **kwargs)
         except (
             mysqlconnector.errors.IntegrityError,
             mysqlconnector.errors.InterfaceError,
         ) as e:
-            print("ERROR: {}".format(e))
+            logger.error("ERROR: {}".format(e))
 
     def fetchone(self):
         return self.cursor.fetchone()
