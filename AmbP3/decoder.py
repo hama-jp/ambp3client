@@ -5,6 +5,7 @@ import codecs
 from sys import exit
 from . import records
 from .logs import Logg
+from . import crc16
 
 logger = Logg.create_logger("decoder")
 
@@ -125,7 +126,41 @@ def p3decode(data):
         return data
 
     def _check_crc(data):
-        "check CRC integrity"
+        """Check CRC integrity of the packet.
+
+        CRC is computed on the entire packet (including SOR and EOR bytes)
+        with CRC bytes set to 0x00, as per AMB P3 protocol specification.
+
+        Args:
+            data: Raw packet data as bytes
+
+        Returns:
+            data if CRC is valid, None if CRC check fails
+        """
+        if len(data) < 6:
+            logger.warning("Packet too short for CRC check")
+            return None
+
+        # Extract CRC from header (bytes 4-6, little-endian)
+        packet_crc_bytes = data[4:6]
+        packet_crc = int.from_bytes(packet_crc_bytes, byteorder='little')
+
+        # Create a copy of the data with CRC bytes zeroed out
+        data_for_crc = bytearray(data)
+        data_for_crc[4:6] = b'\x00\x00'
+
+        # Calculate CRC using the existing crc16 module
+        crc_table = crc16.table()
+        calculated_crc = crc16.calc(data_for_crc.hex(), crc_table)
+
+        if calculated_crc != packet_crc:
+            logger.error(
+                f"CRC check failed: packet CRC={hex(packet_crc)}, "
+                f"calculated CRC={hex(calculated_crc)}"
+            )
+            return None
+
+        logger.debug(f"CRC check passed: {hex(packet_crc)}")
         return data
 
     def _unescape(data):
