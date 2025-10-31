@@ -26,6 +26,7 @@ def dict_to_sqlquery(data_dict, table):
 
 
 class Write:
+    @staticmethod
     def to_file(data, file_handler):
         if not file_handler.closed:
             try:
@@ -36,6 +37,7 @@ class Write:
         else:
             print("{} is not a filehandler".format(file_handler))
 
+    @staticmethod
     def passing_to_mysql(my_cursor, result, table="passes"):
         result = result["RESULT"]
         mysql_p3_map = {

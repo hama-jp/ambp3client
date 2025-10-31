@@ -25,13 +25,11 @@ class Config:
             config_from_file = {}
         if isinstance(config_from_file, dict):
             cli_args_dict = cli_args.__dict__
-            """ remove all None values so we don't merge NONE into the dict bellow """
+            """ remove all None values so we don't merge NONE into the dict below """
             for k, v in list(cli_args_dict.items()):
                 if v is None:
                     del cli_args_dict[k]
-            conf = {**DefaultConfig, **config_from_file}
-            conf = {**cli_args_dict, **conf}
-            conf = {**conf, **cli_args_dict}
+            conf = {**DefaultConfig, **config_from_file, **cli_args_dict}
             print(f"args: {cli_args_dict}")
             print(f"CONF: {conf}")
             self.conf = conf
