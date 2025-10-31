@@ -234,3 +234,34 @@ def assert_similar_dicts(dict1, dict2, ignore_keys=None):
         assert (
             dict1[key] == dict2[key]
         ), f"Value mismatch for key '{key}': {dict1[key]} vs {dict2[key]}"
+
+
+def calculate_and_insert_crc(hex_message):
+    """Calculate CRC for a P3 message and insert it into the message.
+
+    The CRC is calculated on the entire packet with CRC bytes set to 0x00,
+    then inserted at bytes 4-5 in big-endian format.
+
+    Args:
+        hex_message: Hex string of P3 message (with CRC bytes as 0000)
+
+    Returns:
+        Hex string with correct CRC inserted
+    """
+    from AmbP3 import crc16
+
+    # Convert hex string to bytearray
+    data = bytearray.fromhex(hex_message)
+
+    # Ensure CRC bytes (4-5) are zeroed
+    data[4:6] = b'\x00\x00'
+
+    # Calculate CRC
+    crc_table = crc16.table()
+    calculated_crc = crc16.calc(data.hex(), crc_table)
+
+    # Insert CRC at bytes 4-5 (big-endian)
+    data[4] = (calculated_crc >> 8) & 0xFF
+    data[5] = calculated_crc & 0xFF
+
+    return data.hex()

@@ -76,9 +76,14 @@ debug_file: '/tmp/amb_debug.log'  # Debug log
 
 | Option | Description | Default |
 |--------|-------------|---------|
+| skip_crc_check | Skip CRC validation (some decoders send CRC as 0x0000) | true |
 | heat_duration | Heat duration in seconds | 480 |
 | heat_cooldown | Cooldown period after heat | 90 |
 | minimum_lap_time | Minimum valid lap time in seconds | 10 |
+
+### CRC Validation
+
+By default, CRC validation is **disabled** (`skip_crc_check: true`) to maximize compatibility with decoders that may send CRC values as 0x0000. To enable strict CRC validation, set `skip_crc_check: false` in your configuration file.
 
 ## Related Projects
 

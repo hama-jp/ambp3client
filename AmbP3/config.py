@@ -15,6 +15,7 @@ DefaultConfig = {
     "mysql_backend": False,
     "mysql_host": "127.0.0.1",
     "mysql_port": 3306,
+    "skip_crc_check": True,  # Skip CRC validation by default (some decoders send CRC as 0x0000)
 }
 
 

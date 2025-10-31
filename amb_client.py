@@ -28,6 +28,9 @@ def main():
     config = get_args()
     conf = config.conf
     mysql_enabled = conf["mysql_backend"]
+    skip_crc_check = conf.get("skip_crc_check", True)  # Default: skip CRC check
+    logger.info(f"CRC check: {'DISABLED' if skip_crc_check else 'ENABLED'}")
+
     if not mysql_enabled:
         logger.error("ERROR, please configure MySQL")
         exit(1)
@@ -67,7 +70,7 @@ def main():
         try:
             for data in connection.read():
                 decoded_data = data_to_ascii(data)
-                decoded_header, decoded_body = p3decode(data)
+                decoded_header, decoded_body = p3decode(data, skip_crc_check=skip_crc_check)
                 if (
                     decoded_body
                     and "RESULT" in decoded_body
@@ -106,7 +109,7 @@ def main():
                 for data in connection.read():
                     decoded_data = data_to_ascii(data)
                     Write.to_file(decoded_data, amb_raw)
-                    decoded_header, decoded_body = p3decode(data)
+                    decoded_header, decoded_body = p3decode(data, skip_crc_check=skip_crc_check)
                     logger.debug(f"Decoded data - Header: {decoded_header}, Body: {decoded_body}")
                     header_msg = "Decoded Header: {}\n".format(
                         dict_to_ascii(decoded_header)
