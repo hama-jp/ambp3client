@@ -9,6 +9,10 @@ from .logs import Logg
 
 logger = Logg.create_logger("time_client")
 
+# Time client configuration
+CONNECTION_RETRY_INTERVAL = 0.5  # Interval between connection attempts in seconds
+READ_POLL_INTERVAL = 0.5  # Interval for polling time updates in seconds
+
 
 class TCPClient:
     def __init__(self, dt, address, port, interval, retry_connect=30):
@@ -22,7 +26,7 @@ class TCPClient:
         self.connected = False
         retry = self.retry_connect
         while retry > 1:
-            sleep(0.5)
+            sleep(CONNECTION_RETRY_INTERVAL)
             try:
                 logger.info(f"connecting, retry left {retry}")
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,7 +87,7 @@ class TimeClient(object):
                     logger.error(f"Failed to read data: {e}")
                     logger.info(f"reconnecting")
                     self.tcpclient.connected = False
-            sleep(0.5)
+            sleep(READ_POLL_INTERVAL)
 
 
 if __name__ == "__main__":

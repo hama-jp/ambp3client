@@ -2,6 +2,7 @@
 from time import sleep
 from sys import exit
 import os
+import logging
 
 from AmbP3.config import get_args
 from AmbP3.decoder import Connection
@@ -15,14 +16,20 @@ from AmbP3.time_server import TimeServer
 from AmbP3.time_server import DecoderTime
 from AmbP3.time_server import RefreshTime
 
+# Connection poll interval in seconds
+POLL_INTERVAL = 0.2
+
+logger = logging.getLogger("amb_client")
+
 
 def main():
-    print("************ STARTING *******************")
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger.info("************ STARTING *******************")
     config = get_args()
     conf = config.conf
     mysql_enabled = conf["mysql_backend"]
     if not mysql_enabled:
-        print("ERROR, please configure MySQL")
+        logger.error("ERROR, please configure MySQL")
         exit(1)
     mysql_con = open_mysql_connection(
         user=conf["mysql_user"],
@@ -40,10 +47,10 @@ def main():
     RefreshTime(connection)
 
     if not config.file:
-        print("file not defined in config")
+        logger.error("file not defined in config")
         exit(1)
     elif not config.debug_file:
-        print("debug file not defined in config")
+        logger.error("debug file not defined in config")
         exit(1)
 
     # Wait for decoder timestamp with timeout and retry logic
@@ -54,7 +61,7 @@ def main():
     retry_count = 0
 
     while decoder_time is None and retry_count < MAX_RETRIES:
-        print(
+        logger.info(
             f"Waiting for DECODER timestamp (attempt {retry_count + 1}/{MAX_RETRIES})"
         )
         try:
@@ -72,10 +79,10 @@ def main():
                         decoder_time = DecoderTime(
                             int(decoded_body["RESULT"]["RTC_TIME"], 16)
                         )
-                        print(f"GET_TIME: {decoder_time.decoder_time} Continue")
+                        logger.info(f"GET_TIME: {decoder_time.decoder_time} Continue")
                         break
         except Exception as e:
-            print(f"Error reading decoder time: {e}")
+            logger.error(f"Error reading decoder time: {e}")
             retry_count += 1
             if retry_count < MAX_RETRIES:
                 sleep(RETRY_INTERVAL)
@@ -87,7 +94,7 @@ def main():
                 sleep(RETRY_INTERVAL)
 
     if decoder_time is None:
-        print(f"ERROR: Failed to get decoder time after {MAX_RETRIES} attempts")
+        logger.error(f"ERROR: Failed to get decoder time after {MAX_RETRIES} attempts")
         exit(1)
 
     TimeServer(decoder_time)
@@ -116,12 +123,12 @@ def main():
                             decoder_time.set_decoder_time(
                                 int(decoded_body["RESULT"]["RTC_TIME"], 16)
                             )
-                sleep(0.2)
+                sleep(POLL_INTERVAL)
     except KeyboardInterrupt:
-        print("Closing")
+        logger.info("Closing")
         exit(0)
     except IOError as e:
-        print("error writing to file. Reason: {}".format(e))
+        logger.error("error writing to file. Reason: {}".format(e))
 
 
 if __name__ == "__main__":
