@@ -42,7 +42,7 @@ class Connection:
 
     def split_records(self, data):
         """some times server send 2 records in one message
-        concatinated, you can find those by '8f8e' EOR and SOR next to each other"""
+        concatenated, you can find those by '8f8e' EOR and SOR next to each other"""
         byte_array = bytearray(data)
         size = len(byte_array)
         split_data = [bytearray()]
@@ -109,7 +109,7 @@ def bin_data_to_ascii(bin_data):
 
 
 def bin_dict_to_ascii(dict):
-    "takes as input Dict with Binary values, converts into ascii, returns covnerted dict"
+    "takes as input Dict with Binary values, converts into ascii, returns converted dict"
     for key, value in dict.items():
         dict[key] = bin_data_to_ascii(value)
     return dict
@@ -119,7 +119,7 @@ def p3decode(data):
     def _validate(data):
         "perform validation checks and return ready to process data or None"
         data = _check_crc(data) if data is not None else None
-        logger.debug("P3decode function decodint: {}".format(data.hex()))
+        logger.debug("P3decode function decoding: {}".format(data.hex()))
         data = _unescape(data) if data is not None else None
         data = _check_length(data) if data is not None else None
         return data
@@ -174,19 +174,19 @@ def p3decode(data):
             tor_fields = records.type_of_records[hex_tor]["tor_fields"]
             DECODED = {"TOR": tor_name}
         else:
-            logger.error("{} record_type uknown".format(hex_tor))
+            logger.error("{} record_type unknown".format(hex_tor))
             return {"undecoded_tor_body": tor_body}
 
         general_fields = records.GENERAL
         tor_fields = {**general_fields, **tor_fields}
         tor_body = bytearray(tor_body)
         while len(tor_body) > 0:
-            """continuesly read the MSG
+            """continuously read the MSG
             1) take first byte and check if it exists in TOR FIELDS
-            2) if exists capture recort_attr
-            3) capture recort_attr_length ( length is always next byte after record_attr
-            4) capture recort_attr_value ( this is after recordt_attr_length )
-            5) truncate teh TOR by decoded info
+            2) if exists capture record_attr
+            3) capture record_attr_length ( length is always next byte after record_attr
+            4) capture record_attr_value ( this is after record_attr_length )
+            5) truncate the TOR by decoded info
             """
             one_byte = tor_body[0:1]
             one_byte_hex = codecs.encode(one_byte, "hex")

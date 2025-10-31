@@ -455,7 +455,7 @@ and rtc_time > %s limit 1"""
             return self.dt.decoder_time
 
     def get_kart_id(self, transponder_id):
-        """converts transpodner name to  kart number and kart name"""
+        """converts transponder name to kart number and kart name"""
         query = "select name, kart_number from karts where transponder_id = %s"
         result = sql_select(self.cursor, query, (transponder_id,))
         if len(result) == 1:
