@@ -17,6 +17,7 @@ DEFAULT_HEAT_INTERVAL = 90
 DEFAULT_MINIMUM_LAP_TIME = 10
 DEFAULT_HEAT_SETTINGS = ["heat_duration", "heat_cooldown"]
 MAX_GET_TIME_ATTEMPTS = 30
+HEAT_PROCESS_INTERVAL = 0.5  # Heat processing interval in seconds
 
 
 def is_int(string):
@@ -219,7 +220,7 @@ class Heat:
     def process_heat_passes(self):
         "process heat_passes"
         if bool(self.first_pass_id):
-            sleep(0.5)
+            sleep(HEAT_PROCESS_INTERVAL)
             self.rtc_max_duration = self.rtc_time_start + (
                 (self.heat_duration + self.heat_cooldown) * 1000000
             )
@@ -383,7 +384,7 @@ and rtc_time > %s limit 1"""
                 insert_query = "insert into heats ({}) values (%s, %s, %s, %s)".format(
                     columns
                 )
-                print(insert_query)
+                logging.debug(insert_query)
                 if sql_write(self.mycon, insert_query, values) > 0:
                     return starting_pass.pass_id, self.rtc_time_start, self.rtc_time_end
 
@@ -449,7 +450,7 @@ and rtc_time > %s limit 1"""
             sleep(1)
             logging.error("Waiting on time")
         else:
-            print(
+            logging.debug(
                 f"################### {self.dt.decoder_time} #####################################"
             )
             return self.dt.decoder_time
