@@ -41,7 +41,7 @@ def amb_send_msg(hexmsg, ip=ADDR, port=PORT):
             for data in connection.read():
                 decoded_header, decoded_body = p3decode(
                     data
-                )  # NEED OT REPLACE WITH LOGGING
+                )  # NEED TO REPLACE WITH LOGGING
             break
     except KeyboardInterrupt:
         print("Closing")
