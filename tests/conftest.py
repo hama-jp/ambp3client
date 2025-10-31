@@ -80,7 +80,11 @@ def temp_log_file():
 
 @pytest.fixture
 def sample_p3_messages():
-    """Fixture providing sample P3 protocol messages with correct CRCs."""
+    """Fixture providing sample P3 protocol messages with correct CRCs.
+
+    Note: These messages have valid CRCs for testing CRC validation when enabled.
+    In production, skip_crc_check=True is the default since some decoders send CRC as 0x0000.
+    """
     from tests.test_utils import calculate_and_insert_crc
 
     # Messages with CRC bytes set to 0000 (will be calculated)

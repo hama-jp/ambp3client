@@ -151,7 +151,10 @@ class TestP3Decode:
 
     @patch("AmbP3.decoder.logger")
     def test_decode_basic_structure(self, mock_logger):
-        """Test basic decoding structure with minimal valid data."""
+        """Test basic decoding structure with minimal valid data.
+
+        Tests CRC validation by explicitly enabling it with skip_crc_check=False.
+        """
         from tests.test_utils import calculate_and_insert_crc
 
         # Create a minimal valid P3 message with correct CRC:
@@ -162,7 +165,8 @@ class TestP3Decode:
         test_data_with_crc = calculate_and_insert_crc(test_data_hex)
         test_data = bytes.fromhex(test_data_with_crc)
 
-        header, body = p3decode(test_data)
+        # Test with CRC validation enabled
+        header, body = p3decode(test_data, skip_crc_check=False)
 
         # Check that we get some decoded structure
         assert header is not None or body is not None

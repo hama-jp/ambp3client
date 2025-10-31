@@ -116,10 +116,23 @@ def bin_dict_to_ascii(dict):
     return dict
 
 
-def p3decode(data):
-    def _validate(data):
+def p3decode(data, skip_crc_check=True):
+    """Decode P3 protocol message.
+
+    Args:
+        data: Raw packet data as bytes
+        skip_crc_check: If True, skip CRC validation (default: True).
+                       Some decoders send CRC as 0x0000, so skipping is safer.
+
+    Returns:
+        Tuple of (header_dict, body_dict) or (None, None) on error
+    """
+    def _validate(data, skip_crc_check):
         "perform validation checks and return ready to process data or None"
-        data = _check_crc(data) if data is not None else None
+        if skip_crc_check:
+            logger.debug("CRC check skipped (skip_crc_check=True)")
+        else:
+            data = _check_crc(data) if data is not None else None
         if data is not None:
             logger.debug("P3decode function decoding: {}".format(data.hex()))
         data = _unescape(data) if data is not None else None
@@ -267,7 +280,7 @@ def p3decode(data):
         tor_body = data[10:]
         return tor_body
 
-    data = _validate(data)
+    data = _validate(data, skip_crc_check)
     if data is not None:
         decoded_header = _get_header(data)
         tor = decoded_header["TOR"]
