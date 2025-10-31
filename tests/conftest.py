@@ -80,13 +80,22 @@ def temp_log_file():
 
 @pytest.fixture
 def sample_p3_messages():
-    """Fixture providing sample P3 protocol messages."""
-    return {
+    """Fixture providing sample P3 protocol messages with correct CRCs."""
+    from tests.test_utils import calculate_and_insert_crc
+
+    # Messages with CRC bytes set to 0000 (will be calculated)
+    messages_without_crc = {
         "get_time": "8e021000000000000000000000008f",
-        "passing_1": "8e021f00f3890000020001022800070216000c01760601008104131804008f",
-        "passing_2": "8e021f00895d0000020001022500070216000c01760601008104131804008f",
-        "passing_with_transponder": "8e02330053c800000100010451680200030473d75600040888f2fab51e8305000502b20006023400080200008104131804008f",
-        "heartbeat": "8e021f006e970000020001022700070216000c01770601008104131804008f",
+        "passing_1": "8e021f00000000000200010228000702160c01760601008104131804008f",
+        "passing_2": "8e021f00000000000200010225000702160c01760601008104131804008f",
+        "passing_with_transponder": "8e0233000000000001000104516802000304773d560004088826a95ef28305000502b20006023400080200008104131804008f",
+        "heartbeat": "8e021f00000000000200010227000702160c01770601008104131804008f",
+    }
+
+    # Calculate and insert correct CRCs
+    return {
+        name: calculate_and_insert_crc(msg)
+        for name, msg in messages_without_crc.items()
     }
 
 

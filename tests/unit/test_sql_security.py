@@ -119,15 +119,17 @@ class TestHeatMethodSecurity:
         mock_mysql_connect.return_value = mock_mysql
 
         # Mock settings and heat queries
+        # Note: first_pass_id is None to avoid calling get_transponder during init
         mock_sql_select.side_effect = [
             [],  # settings query
-            [(1, False, 100, None, 1000000, None, 0, 2000000)],  # get_heat query
+            [(1, False, None, None, 1000000, None, 0, 2000000)],  # get_heat query (first_pass_id=None)
         ]
 
         heat = Heat(mock_heat_config, mock_decoder_time)
 
         # Reset mock to track only is_running calls
         mock_sql_select.reset_mock()
+        mock_sql_select.side_effect = None  # Clear side_effect
         mock_sql_select.return_value = [(False,)]
 
         heat.is_running(123)
@@ -162,16 +164,17 @@ class TestHeatMethodSecurity:
         mock_mysql_connect.return_value = mock_mysql
 
         # Mock queries
+        # Note: first_pass_id is None to avoid calling get_transponder during init
         mock_sql_select.side_effect = [
             [],  # settings query
-            [(1, False, 100, None, 1000000, None, 0, 2000000)],  # get_heat query
-            [12345],  # get_transponder query
+            [(1, False, None, None, 1000000, None, 0, 2000000)],  # get_heat query (first_pass_id=None)
         ]
 
         heat = Heat(mock_heat_config, mock_decoder_time)
 
         # Reset and set up for get_transponder call
         mock_sql_select.reset_mock()
+        mock_sql_select.side_effect = None  # Clear side_effect
         mock_sql_select.return_value = [[12345]]
 
         result = heat.get_transponder(100)
