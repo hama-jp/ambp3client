@@ -120,7 +120,8 @@ def p3decode(data):
     def _validate(data):
         "perform validation checks and return ready to process data or None"
         data = _check_crc(data) if data is not None else None
-        logger.debug("P3decode function decoding: {}".format(data.hex()))
+        if data is not None:
+            logger.debug("P3decode function decoding: {}".format(data.hex()))
         data = _unescape(data) if data is not None else None
         data = _check_length(data) if data is not None else None
         return data
@@ -141,9 +142,9 @@ def p3decode(data):
             logger.warning("Packet too short for CRC check")
             return None
 
-        # Extract CRC from header (bytes 4-6, little-endian)
+        # Extract CRC from header (bytes 4-6, big-endian)
         packet_crc_bytes = data[4:6]
-        packet_crc = int.from_bytes(packet_crc_bytes, byteorder='little')
+        packet_crc = int.from_bytes(packet_crc_bytes, byteorder='big')
 
         # Create a copy of the data with CRC bytes zeroed out
         data_for_crc = bytearray(data)
