@@ -6,7 +6,7 @@ import sys
 import os
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 
 class TestSQLParameterization:
@@ -17,7 +17,7 @@ class TestSQLParameterization:
         from amb_laps import sql_select
 
         mock_cursor = Mock()
-        mock_cursor.fetchall.return_value = [(1, 'test')]
+        mock_cursor.fetchall.return_value = [(1, "test")]
         mock_cursor.rowcount = 1
 
         query = "SELECT * FROM table WHERE id = %s"
@@ -27,14 +27,14 @@ class TestSQLParameterization:
 
         # Verify execute was called with query and params
         mock_cursor.execute.assert_called_once_with(query, params)
-        assert result == [(1, 'test')]
+        assert result == [(1, "test")]
 
     def test_sql_select_without_params(self):
         """Test sql_select function without parameters."""
         from amb_laps import sql_select
 
         mock_cursor = Mock()
-        mock_cursor.fetchall.return_value = [(1, 'test')]
+        mock_cursor.fetchall.return_value = [(1, "test")]
         mock_cursor.rowcount = 1
 
         query = "SELECT * FROM table"
@@ -43,7 +43,7 @@ class TestSQLParameterization:
 
         # Verify execute was called with just query
         mock_cursor.execute.assert_called_once_with(query)
-        assert result == [(1, 'test')]
+        assert result == [(1, "test")]
 
     def test_sql_write_with_params(self):
         """Test sql_write function with parameters."""
@@ -55,7 +55,7 @@ class TestSQLParameterization:
         mycon = (mock_mysql, mock_cursor)
 
         query = "INSERT INTO table (col1, col2) VALUES (%s, %s)"
-        params = (123, 'test')
+        params = (123, "test")
 
         result = sql_write(mycon, query, params)
 
@@ -90,11 +90,11 @@ class TestHeatMethodSecurity:
     def mock_heat_config(self):
         """Fixture for mock Heat configuration."""
         return {
-            'mysql_user': 'test_user',
-            'mysql_db': 'test_db',
-            'mysql_password': 'test_pass',
-            'mysql_host': '127.0.0.1',
-            'mysql_port': 3306,
+            "mysql_user": "test_user",
+            "mysql_db": "test_db",
+            "mysql_password": "test_pass",
+            "mysql_host": "127.0.0.1",
+            "mysql_port": 3306,
         }
 
     @pytest.fixture
@@ -104,9 +104,11 @@ class TestHeatMethodSecurity:
         decoder_time.decoder_time = 1000000
         return decoder_time
 
-    @patch('amb_laps.mysql_connect')
-    @patch('amb_laps.sql_select')
-    def test_is_running_uses_parameterized_query(self, mock_sql_select, mock_mysql_connect, mock_heat_config, mock_decoder_time):
+    @patch("amb_laps.mysql_connect")
+    @patch("amb_laps.sql_select")
+    def test_is_running_uses_parameterized_query(
+        self, mock_sql_select, mock_mysql_connect, mock_heat_config, mock_decoder_time
+    ):
         """Test that is_running method uses parameterized queries."""
         from amb_laps import Heat
 
@@ -119,7 +121,7 @@ class TestHeatMethodSecurity:
         # Mock settings and heat queries
         mock_sql_select.side_effect = [
             [],  # settings query
-            [(1, False, 100, None, 1000000, None, 0, 2000000)]  # get_heat query
+            [(1, False, 100, None, 1000000, None, 0, 2000000)],  # get_heat query
         ]
 
         heat = Heat(mock_heat_config, mock_decoder_time)
@@ -134,18 +136,22 @@ class TestHeatMethodSecurity:
         call_args = mock_sql_select.call_args
         assert call_args is not None
         query = call_args[0][1]  # Second argument is the query
-        params = call_args[0][2] if len(call_args[0]) > 2 else None  # Third argument is params
+        params = (
+            call_args[0][2] if len(call_args[0]) > 2 else None
+        )  # Third argument is params
 
         # Check that query uses %s placeholder
-        assert '%s' in query
-        assert '{' not in query  # No f-string formatting
-        assert 'format(' not in query  # No .format()
+        assert "%s" in query
+        assert "{" not in query  # No f-string formatting
+        assert "format(" not in query  # No .format()
         # Check that params were passed
         assert params == (123,)
 
-    @patch('amb_laps.mysql_connect')
-    @patch('amb_laps.sql_select')
-    def test_get_transponder_uses_parameterized_query(self, mock_sql_select, mock_mysql_connect, mock_heat_config, mock_decoder_time):
+    @patch("amb_laps.mysql_connect")
+    @patch("amb_laps.sql_select")
+    def test_get_transponder_uses_parameterized_query(
+        self, mock_sql_select, mock_mysql_connect, mock_heat_config, mock_decoder_time
+    ):
         """Test that get_transponder method uses parameterized queries."""
         from amb_laps import Heat
 
@@ -159,7 +165,7 @@ class TestHeatMethodSecurity:
         mock_sql_select.side_effect = [
             [],  # settings query
             [(1, False, 100, None, 1000000, None, 0, 2000000)],  # get_heat query
-            [12345]  # get_transponder query
+            [12345],  # get_transponder query
         ]
 
         heat = Heat(mock_heat_config, mock_decoder_time)
@@ -175,7 +181,7 @@ class TestHeatMethodSecurity:
         query = call_args[0][1]
         params = call_args[0][2] if len(call_args[0]) > 2 else None
 
-        assert '%s' in query
+        assert "%s" in query
         assert params == (100,)
         assert result == 12345
 
@@ -193,14 +199,14 @@ class TestNoSQLInjectionVulnerabilities:
 
         # List of methods that should not have f-string SQL queries
         critical_methods = [
-            'is_running',
-            'get_pass_timestamp',
-            'get_transponder',
-            'finish_heat',
-            'valid_lap_time',
-            'wave_finish_flag',
-            'check_if_all_finished',
-            'get_kart_id',
+            "is_running",
+            "get_pass_timestamp",
+            "get_transponder",
+            "finish_heat",
+            "valid_lap_time",
+            "wave_finish_flag",
+            "check_if_all_finished",
+            "get_kart_id",
         ]
 
         # This is a basic check - in a real scenario, you'd use AST parsing
@@ -216,13 +222,13 @@ class TestNoSQLInjectionVulnerabilities:
 
         # Check sql_select signature
         sig_select = inspect.signature(sql_select)
-        assert 'params' in sig_select.parameters
-        assert sig_select.parameters['params'].default is None
+        assert "params" in sig_select.parameters
+        assert sig_select.parameters["params"].default is None
 
         # Check sql_write signature
         sig_write = inspect.signature(sql_write)
-        assert 'params' in sig_write.parameters
-        assert sig_write.parameters['params'].default is None
+        assert "params" in sig_write.parameters
+        assert sig_write.parameters["params"].default is None
 
 
 class TestSQLInjectionPrevention:
