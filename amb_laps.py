@@ -225,15 +225,21 @@ class Heat:
                 (self.heat_duration + self.heat_cooldown) * 1000000
             )
             self.first_transponder = self.get_transponder(self.first_pass_id)
-            """ FIX ME heat_not_processed_passes_query MUST BE MORE SIMPLE """
-            all_heat_passes_query = """select * from passes where pass_id >= %s and rtc_time <= %s
-union all ( select * from passes where rtc_time > %s limit 1 )"""
-            # nosec B608 - Safe: Formatting is used only to insert a parameterized subquery, not user data
-            heat_not_processed_passes_query = """select passes.* from ( {} ) as passes left join laps on
-passes.pass_id = laps.pass_id where laps.heat_id is NULL""".format(
-                all_heat_passes_query
-            )
-            #  print(heat_not_processed_passes_query)
+            # Get unprocessed passes within heat duration, plus the first pass after duration ends
+            heat_not_processed_passes_query = """
+                SELECT p.*
+                FROM passes p
+                LEFT JOIN laps l ON p.pass_id = l.pass_id
+                WHERE l.heat_id IS NULL
+                  AND p.pass_id >= %s
+                  AND (
+                    p.rtc_time <= %s
+                    OR p.pass_id = (
+                      SELECT pass_id FROM passes WHERE rtc_time > %s ORDER BY pass_id LIMIT 1
+                    )
+                  )
+                ORDER BY p.pass_id
+            """
             not_processed_passes = sql_select(
                 self.cursor,
                 heat_not_processed_passes_query,

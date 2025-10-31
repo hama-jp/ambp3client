@@ -1,4 +1,90 @@
-AMB Decoder P3 client. Python implementation.
+# AMB Decoder P3 Client
 
-https://github.com/vmindru/ambweb
-https://github.com/br0ziliy/amb-docker
+Python implementation for AMB Decoder P3 client, designed to interface with AMB timing systems for kart racing and motorsports.
+
+## Overview
+
+This client communicates with AMB Decoder P3 devices to:
+- Receive real-time transponder data
+- Process lap times automatically
+- Manage heat sessions and cooldown periods
+- Synchronize time across multiple clients
+- Persist data to MySQL database
+
+## Features
+
+- **Real-time Data Processing**: Direct TCP connection to AMB Decoder
+- **Automatic Heat Management**: Creates and manages race heats with configurable duration
+- **Lap Time Validation**: Validates lap times with minimum lap time threshold
+- **Time Synchronization**: Built-in time server/client for multi-decoder setups
+- **Robust Error Handling**: Automatic reconnection and retry logic
+- **MySQL Integration**: Stores passes and laps with proper indexing
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.7+
+- MySQL/MariaDB 5.7+
+- AMB Decoder P3 device
+- Network connectivity to decoder
+
+### Installation
+
+```bash
+git clone https://github.com/hama-jp/ambp3client
+cd ambp3client
+pip install -r requirements.txt
+```
+
+### Configuration
+
+Create `local_conf.yaml`:
+
+```yaml
+ip: '192.168.1.100'           # Decoder IP address
+port: 5403                     # Decoder port (default: 5403)
+mysql_host: 'localhost'
+mysql_user: 'your_user'
+mysql_db: 'your_database'
+mysql_password: 'your_password'  # Use environment variable in production
+mysql_port: 3306
+mysql_backend: true
+file: '/tmp/amb_raw.log'       # Raw data log
+debug_file: '/tmp/amb_debug.log'  # Debug log
+```
+
+### Running
+
+```bash
+# Start decoder client (receives data from decoder)
+./amb_client.py -f local_conf.yaml
+
+# Start lap processor (processes heats and laps)
+./amb_laps.py
+```
+
+## Architecture
+
+- **amb_client.py**: Main client that connects to decoder and writes pass data to database
+- **amb_laps.py**: Heat and lap processing logic
+- **AmbP3/decoder.py**: Protocol decoder for AMB P3 binary format
+- **AmbP3/write.py**: Database write operations with cursor management
+- **AmbP3/time_server.py / time_client.py**: Time synchronization between clients
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| heat_duration | Heat duration in seconds | 480 |
+| heat_cooldown | Cooldown period after heat | 90 |
+| minimum_lap_time | Minimum valid lap time in seconds | 10 |
+
+## Related Projects
+
+- [AMB Web Interface](https://github.com/vmindru/ambweb)
+- [AMB Docker Setup](https://github.com/br0ziliy/amb-docker)
+
+## License
+
+Apache License 2.0
