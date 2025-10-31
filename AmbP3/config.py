@@ -1,9 +1,12 @@
 import yaml
+import logging
 from argparse import ArgumentParser
 
 DEFAULT_PORT = 5403
 DEFAULT_IP = "127.0.0.1"
 DEFAULT_CONFIG_FILE = "conf.yaml"
+
+logger = logging.getLogger("config")
 DefaultConfig = {
     "ip": DEFAULT_IP,
     "port": DEFAULT_PORT,
@@ -32,8 +35,8 @@ class Config:
             conf = {**DefaultConfig, **config_from_file}
             conf = {**cli_args_dict, **conf}
             conf = {**conf, **cli_args_dict}
-            print(f"args: {cli_args_dict}")
-            print(f"CONF: {conf}")
+            logger.debug(f"args: {cli_args_dict}")
+            logger.debug(f"CONF: {conf}")
             self.conf = conf
             self.ip = conf["ip"]
             self.port = conf["port"]

@@ -383,7 +383,7 @@ and rtc_time > %s limit 1"""
                 insert_query = "insert into heats ({}) values (%s, %s, %s, %s)".format(
                     columns
                 )
-                print(insert_query)
+                logging.debug(insert_query)
                 if sql_write(self.mycon, insert_query, values) > 0:
                     return starting_pass.pass_id, self.rtc_time_start, self.rtc_time_end
 
@@ -449,7 +449,7 @@ and rtc_time > %s limit 1"""
             sleep(1)
             logging.error("Waiting on time")
         else:
-            print(
+            logging.debug(
                 f"################### {self.dt.decoder_time} #####################################"
             )
             return self.dt.decoder_time

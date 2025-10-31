@@ -3,9 +3,12 @@ from time import sleep
 import threading
 import time
 import socketserver
+from .logs import Logg
 
 TIME_PORT = 9999
 TIME_IP = "127.0.0.1"
+
+logger = Logg.create_logger("time_server")
 
 
 class RefreshTime:
@@ -17,7 +20,7 @@ class RefreshTime:
         thread.start()
 
     def run(self):
-        print("Requesting Decoder Time")
+        logger.info("Requesting Decoder Time")
         get_time_msg = bytes.fromhex("8E0000005BEB000024000100040005008F")
         self.connection.write(get_time_msg)
         sleep(self.refresh_interval)
@@ -51,10 +54,10 @@ class TCPServer(socketserver.BaseRequestHandler):
                 self.request.sendall(self.data)
                 sleep(self.interval)
             except (ConnectionResetError, BrokenPipeError) as error:
-                print("socket connection error: {}".format(error))
+                logger.error("socket connection error: {}".format(error))
                 break
             except (KeyboardInterrupt, TypeError) as error:
-                print("closing socket, connection: {}".format(error))
+                logger.info("closing socket, connection: {}".format(error))
                 break
 
 
