@@ -67,8 +67,9 @@ class AppConfig:
         self.mysql_port = config_dict.get("mysql_port", 3306)
         self.mysql_db = config_dict.get("mysql_db", "cars")
         self.mysql_user = config_dict.get("mysql_user", "car")
-        self.mysql_pass = config_dict.get(
-            "mysql_pass", config_dict.get("mysql_password", "cars")
+        self.mysql_pass = os.getenv(
+            "MYSQL_PASSWORD",
+            config_dict.get("mysql_pass", config_dict.get("mysql_password", "cars")),
         )
 
 

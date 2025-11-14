@@ -83,10 +83,14 @@ def main():
     if not mysql_enabled:
         logger.error("ERROR, please configure MySQL")
         exit(1)
+
+    # Use environment variable for password if available
+    mysql_password = os.getenv("MYSQL_PASSWORD", conf.get("mysql_password"))
+
     mysql_con = open_mysql_connection(
         user=conf["mysql_user"],
         db=conf["mysql_db"],
-        password=conf["mysql_password"],
+        password=mysql_password,
         host=conf["mysql_host"],
         port=conf["mysql_port"],
     )
