@@ -5,11 +5,13 @@ Python implementation for AMB Decoder P3 client, designed to interface with AMB 
 ## Overview
 
 This client communicates with AMB Decoder P3 devices to:
+
 - Receive real-time transponder data
 - Process lap times automatically
 - Manage heat sessions and cooldown periods
 - Synchronize time across multiple clients
 - Persist data to MySQL database
+- Display real-time lap times via web dashboard
 
 ## Features
 
@@ -19,8 +21,9 @@ This client communicates with AMB Decoder P3 devices to:
 - **Time Synchronization**: Built-in time server/client for multi-decoder setups
 - **Robust Error Handling**: Automatic reconnection and retry logic
 - **MySQL Integration**: Stores passes and laps with proper indexing
+- **Web Dashboard**: FastAPI-powered real-time lap time display UI
 
-## Quick Start
+## System Requirements
 
 ### Prerequisites
 
@@ -29,61 +32,364 @@ This client communicates with AMB Decoder P3 devices to:
 - AMB Decoder P3 device
 - Network connectivity to decoder
 
-### Installation
+## Installation
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/hama-jp/ambp3client
 cd ambp3client
+```
+
+### 2. Create and Activate Virtual Environment
+
+Using a virtual environment is strongly recommended to avoid polluting your system Python environment.
+
+**Create virtual environment:**
+```bash
+python3 -m venv venv
+```
+
+**Activate virtual environment:**
+
+Linux/macOS:
+```bash
+source venv/bin/activate
+```
+
+Windows:
+```bash
+venv\Scripts\activate
+```
+
+When the virtual environment is activated, you'll see `(venv)` at the beginning of your prompt.
+
+### 3. Install Dependencies
+
+With the virtual environment activated, install the required packages.
+
+**Client (basic functionality) only:**
+```bash
 pip install -r requirements.txt
 ```
 
-### Configuration
+**Including web dashboard:**
+```bash
+pip install -r requirements.txt
+pip install -r requirements-webapp.txt
+```
+
+**Development environment (including tests and linting):**
+```bash
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+> **Note:** To exit the virtual environment, run `deactivate`. You'll need to activate it again with `source venv/bin/activate` next time.
+
+### 4. Database Setup
+
+Create MySQL database and tables:
+
+```bash
+mysql -u root -p < schema
+```
+
+The schema includes the following tables:
+- `passes`: Raw transponder pass records
+- `laps`: Processed lap times
+- `heats`: Race sessions
+- `cars`: RC car/transponder information
+- `settings`: System configuration
+
+## Configuration
+
+### Create Configuration File
 
 Create `local_conf.yaml`:
 
 ```yaml
+# Decoder connection settings
 ip: '192.168.1.100'           # Decoder IP address
 port: 5403                     # Decoder port (default: 5403)
+
+# MySQL settings
 mysql_host: 'localhost'
 mysql_user: 'your_user'
 mysql_db: 'your_database'
 mysql_password: 'your_password'  # Use environment variable in production
 mysql_port: 3306
 mysql_backend: true
+
+# Log files
 file: '/tmp/amb_raw.log'       # Raw data log
 debug_file: '/tmp/amb_debug.log'  # Debug log
+
+# Heat settings (optional)
+heat_duration: 480             # Heat duration in seconds
+heat_cooldown: 90              # Cooldown period after heat (seconds)
+minimum_lap_time: 10           # Minimum valid lap time (seconds)
+
+# CRC validation (optional)
+skip_crc_check: true           # Skip CRC validation (default: true)
 ```
 
-### Running
-
-```bash
-# Start decoder client (receives data from decoder)
-./amb_client.py -f local_conf.yaml
-
-# Start lap processor (processes heats and laps)
-./amb_laps.py
-```
-
-## Architecture
-
-- **amb_client.py**: Main client that connects to decoder and writes pass data to database
-- **amb_laps.py**: Heat and lap processing logic
-- **AmbP3/decoder.py**: Protocol decoder for AMB P3 binary format
-- **AmbP3/write.py**: Database write operations with cursor management
-- **AmbP3/time_server.py / time_client.py**: Time synchronization between clients
-
-## Configuration Options
+### Configuration Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| skip_crc_check | Skip CRC validation (some decoders send CRC as 0x0000) | true |
-| heat_duration | Heat duration in seconds | 480 |
-| heat_cooldown | Cooldown period after heat | 90 |
-| minimum_lap_time | Minimum valid lap time in seconds | 10 |
+| `skip_crc_check` | Skip CRC validation (some decoders send CRC as 0x0000) | true |
+| `heat_duration` | Heat duration in seconds | 480 |
+| `heat_cooldown` | Cooldown period after heat (seconds) | 90 |
+| `minimum_lap_time` | Minimum valid lap time (seconds) | 10 |
 
 ### CRC Validation
 
 By default, CRC validation is **disabled** (`skip_crc_check: true`) to maximize compatibility with decoders that may send CRC values as 0x0000. To enable strict CRC validation, set `skip_crc_check: false` in your configuration file.
+
+## Usage
+
+### Basic Startup Procedure
+
+#### 1. Start Decoder Client
+
+Receives data from decoder and writes to database:
+
+```bash
+./amb_client.py -f local_conf.yaml
+```
+
+#### 2. Start Lap Processor
+
+Processes heats and laps:
+
+```bash
+./amb_laps.py
+```
+
+#### 3. Start Web Dashboard (Optional)
+
+Displays real-time lap times:
+
+```bash
+./start_webapp.sh
+```
+
+Or start directly:
+
+```bash
+cd webapp
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+Access the web dashboard at `http://localhost:8000` in your browser.
+
+## Architecture
+
+### Core Components
+
+- **amb_client.py**: Main client that connects to decoder and writes pass data to database
+- **amb_laps.py**: Heat and lap processing logic
+- **webapp/app.py**: FastAPI-powered web dashboard (with WebSocket support)
+
+### Library Modules
+
+- **AmbP3/decoder.py**: Protocol decoder for AMB P3 binary format
+- **AmbP3/write.py**: Database write operations with cursor management
+- **AmbP3/time_server.py / time_client.py**: Time synchronization between clients
+- **AmbP3/config.py**: Configuration file reading and argument processing
+- **AmbP3/crc16.py**: CRC16 checksum calculation
+- **AmbP3/records.py**: Data record definitions
+
+## Web Dashboard
+
+The web dashboard is a real-time display system using FastAPI and WebSocket.
+
+### Features
+
+- **Real-time Updates**: Instant lap time display via WebSocket
+- **Statistics Display**: Best lap, average lap, latest lap for each transponder
+- **Car Information**: Display car number and driver name
+- **Text-to-Speech Support**: Lap time announcement using Web Speech API (when browser supports)
+
+### API Endpoints
+
+- `GET /`: Dashboard main page
+- `GET /api/transponders`: Get list of transponders
+- `GET /api/laps/{transponder_id}`: Get lap statistics for specified transponder
+- `WebSocket /ws`: WebSocket connection for real-time lap updates
+
+For details, see [webapp/README.ja.md](webapp/README.ja.md).
+
+## Data Flow
+
+```
+AMB Decoder P3
+    ↓ (TCP/IP)
+amb_client.py
+    ↓ (MySQL)
+passes table
+    ↓
+amb_laps.py
+    ↓ (MySQL)
+laps/heats tables
+    ↓
+webapp/app.py (FastAPI)
+    ↓ (WebSocket)
+Web Browser
+```
+
+## Heat Management
+
+### Heat Lifecycle
+
+1. **Green Flag Wait**: Wait for `green_flag=1` in `settings` table
+2. **Heat Start**: Automatically create heat on first pass
+3. **Lap Recording**: Record all passes for `heat_duration` seconds
+4. **Yellow Flag**: Wave flag when heat end time is reached
+5. **Cooldown**: Record additional laps for `heat_cooldown` seconds
+6. **Heat End**: All participants finish or maximum time reached
+
+### Setting Green Flag
+
+To start a race, set the green flag in the database:
+
+```sql
+UPDATE settings SET value='1' WHERE setting='green_flag';
+```
+
+After the heat ends, reset for the next race:
+
+```sql
+UPDATE settings SET value='0' WHERE setting='green_flag';
+```
+
+## Troubleshooting
+
+### Cannot Connect to Decoder
+
+```bash
+# Check connection to decoder
+ping <decoder_ip>
+
+# Check if port is open
+telnet <decoder_ip> 5403
+```
+
+### MySQL Errors
+
+```bash
+# Verify database and tables exist
+mysql -u <user> -p <database> -e "SHOW TABLES;"
+
+# Check connection settings
+mysql -u <user> -p -h <host> -P <port> <database>
+```
+
+### CRC Errors
+
+Disable CRC validation by setting `skip_crc_check: true` in configuration file.
+
+### Web Dashboard Won't Start
+
+```bash
+# Check if dependencies are installed
+pip install -r requirements-webapp.txt
+
+# Check if port 8000 is available
+lsof -i :8000
+```
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# With coverage report
+pytest --cov=AmbP3 --cov-report=html
+
+# Run specific tests only
+pytest tests/unit/test_decoder.py
+```
+
+### Code Quality Checks
+
+```bash
+# Flake8 (linter)
+flake8 AmbP3/ tests/
+
+# Bandit (security check)
+bandit -r AmbP3/
+
+# Black (code formatter)
+black --check AmbP3/ tests/
+```
+
+## Database Schema
+
+### passes Table
+Stores raw transponder pass records.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| db_entry_id | INT | Auto-increment ID |
+| pass_id | INT | Pass ID (unique) |
+| transponder_id | INT | Transponder ID |
+| rtc_time | BIGINT | Real-time clock timestamp (microseconds) |
+| strength | INT | Signal strength |
+| hits | INT | Number of hits |
+| flags | INT | Flags |
+| decoder_id | INT | Decoder ID |
+
+### laps Table
+Stores processed lap times.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| heat_id | INT | Heat ID |
+| pass_id | INT | Pass ID (reference to passes.pass_id) |
+| transponder_id | INT | Transponder ID |
+| rtc_time | BIGINT | Lap time |
+
+### heats Table
+Stores race session information.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| heat_id | INT | Auto-increment ID |
+| heat_finished | TINYINT | Finished flag (0=running, 1=finished) |
+| first_pass_id | INT | First pass ID |
+| last_pass_id | INT | Last pass ID |
+| rtc_time_start | BIGINT | Start time |
+| rtc_time_end | BIGINT | End time |
+| race_flag | INT | Race flag (0=green, 1=yellow, 2=checkered) |
+| rtc_time_max_end | BIGINT | Maximum end time (including cooldown) |
+
+## FAQ
+
+### Q: Can I use multiple decoders?
+A: Yes. Use time_server and time_client to synchronize time across multiple decoders.
+
+### Q: How do I set car numbers and names?
+A: Register transponder IDs and car information in the `cars` table:
+
+```sql
+INSERT INTO cars (transponder_id, name, car_number)
+VALUES (123456, 'Driver Name', 10);
+```
+
+### Q: How do I change the minimum lap time?
+A: Change `minimum_lap_time` in the configuration file, or modify the `settings` table in the database:
+
+```sql
+UPDATE settings SET value='15' WHERE setting='minimum_lap_time';
+```
+
+### Q: What if log files get too large?
+A: Configure log rotation using logrotate or similar tools.
 
 ## Related Projects
 
@@ -93,3 +399,16 @@ By default, CRC validation is **disabled** (`skip_crc_check: true`) to maximize 
 ## License
 
 Apache License 2.0
+
+## Support
+
+If you encounter any issues, please report them on the GitHub Issues page:
+https://github.com/hama-jp/ambp3client/issues
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## Security
+
+If you discover a security vulnerability, please report it directly to the project maintainers rather than creating a public issue.
