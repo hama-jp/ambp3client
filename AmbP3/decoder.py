@@ -1,13 +1,26 @@
 import socket
 import codecs
 
-
-from sys import exit
 from . import records
 from .logs import Logg
 from . import crc16
 
 logger = Logg.create_logger("decoder")
+
+
+class DecoderConnectionError(Exception):
+    """Exception raised for decoder connection errors that should trigger reconnection logic."""
+    pass
+
+
+class DecoderReadError(Exception):
+    """Exception raised for decoder read errors that should trigger reconnection logic."""
+    pass
+
+
+class DecoderWriteError(Exception):
+    """Exception raised for decoder write errors that should trigger reconnection logic."""
+    pass
 
 
 class Connection:
@@ -41,14 +54,18 @@ class Connection:
             logger.error(
                 "Can not connect to {}:{}. {}".format(self.ip, self.port, error)
             )
-            exit(1)
+            raise DecoderConnectionError(
+                f"Connection refused to {self.ip}:{self.port}: {error}"
+            ) from error
         except (socket.timeout, socket.error) as error:
             logger.error(
                 "Error occurred while trying to communicate with  {}:{}:{}".format(
                     self.ip, self.port, error
                 )
             )
-            exit(1)
+            raise DecoderConnectionError(
+                f"Socket error while connecting to {self.ip}:{self.port}: {error}"
+            ) from error
 
     def split_records(self, data):
         """Split concatenated records in received data.
@@ -91,13 +108,13 @@ class Connection:
             return []  # Return empty list on timeout
         except socket.error as e:
             logger.error(f"Error reading from socket: {e}")
-            exit(1)
+            raise DecoderReadError(f"Socket error while reading: {e}") from e
 
         if data == b"":
             msg = "No data received, it seems socket got closed"
             logger.info("{}".format(msg))
             self.socket.close()
-            exit(1)
+            raise DecoderReadError(msg)
         return self.split_records(data)
 
     def write(self, data):
@@ -107,15 +124,16 @@ class Connection:
             data: Bytes to send to the decoder
 
         Raises:
-            SystemExit: On socket error or timeout
+            DecoderWriteError: On socket error or timeout
         """
         try:
             data = self.socket.send(data)
-        except socket.error:
+        except socket.error as e:
             logger.error("Error write from socket")
-            exit(1)
-        except socket.timeout:
+            raise DecoderWriteError(f"Socket error while writing: {e}") from e
+        except socket.timeout as e:
             logger.error("Socket closed while reading")
+            raise DecoderWriteError(f"Socket timeout while writing: {e}") from e
 
 
 def hex_to_binary(data):

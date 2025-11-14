@@ -6,6 +6,7 @@ import logging
 
 from AmbP3.config import get_args
 from AmbP3.decoder import Connection
+from AmbP3.decoder import DecoderConnectionError, DecoderReadError, DecoderWriteError
 from AmbP3.decoder import p3decode
 from AmbP3.decoder import bin_data_to_ascii as data_to_ascii
 from AmbP3.decoder import bin_dict_to_ascii as dict_to_ascii
@@ -19,7 +20,47 @@ from AmbP3.time_server import RefreshTime
 # Connection poll interval in seconds
 POLL_INTERVAL = 0.2
 
+# Reconnection configuration
+RECONNECT_MAX_RETRIES = int(os.getenv("RECONNECT_MAX_RETRIES", "5"))
+RECONNECT_INTERVAL = float(os.getenv("RECONNECT_INTERVAL", "5.0"))
+
 logger = logging.getLogger("amb_client")
+
+
+def connect_to_decoder(ip, port, max_retries=RECONNECT_MAX_RETRIES, retry_interval=RECONNECT_INTERVAL):
+    """Connect to decoder with retry logic.
+
+    Args:
+        ip: IP address of the decoder
+        port: Port number of the decoder
+        max_retries: Maximum number of connection attempts (default: 5)
+        retry_interval: Seconds to wait between retries (default: 5.0)
+
+    Returns:
+        Connection object if successful
+
+    Raises:
+        DecoderConnectionError: If all connection attempts fail
+    """
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            logger.info(f"Attempting to connect to decoder {ip}:{port} (attempt {retry_count + 1}/{max_retries})")
+            connection = Connection(ip, port)
+            connection.connect()
+            logger.info(f"Successfully connected to decoder {ip}:{port}")
+            return connection
+        except DecoderConnectionError as e:
+            retry_count += 1
+            if retry_count < max_retries:
+                logger.warning(f"Connection failed: {e}. Retrying in {retry_interval} seconds...")
+                sleep(retry_interval)
+            else:
+                logger.error(f"Failed to connect to decoder after {max_retries} attempts")
+                raise
+
+    # Should not reach here, but just in case
+    raise DecoderConnectionError(f"Failed to connect to decoder {ip}:{port} after {max_retries} attempts")
 
 
 def main():
@@ -53,8 +94,7 @@ def main():
     my_cursor = Cursor(mysql_con, cursor)
 
     """ start Connection to Decoder """
-    connection = Connection(config.ip, config.port)
-    connection.connect()
+    connection = connect_to_decoder(config.ip, config.port)
     RefreshTime(connection)
 
     if not config.file:
@@ -92,6 +132,21 @@ def main():
                         )
                         logger.info(f"GET_TIME: {decoder_time.decoder_time} Continue")
                         break
+        except (DecoderReadError, DecoderWriteError) as e:
+            logger.error(f"Decoder communication error while reading time: {e}")
+            logger.info("Attempting to reconnect to decoder...")
+            try:
+                connection.close()
+            except Exception:
+                pass  # Ignore errors when closing broken connection
+
+            # Reconnect to decoder
+            connection = connect_to_decoder(config.ip, config.port)
+            RefreshTime(connection)
+            retry_count += 1
+            if retry_count < MAX_RETRIES:
+                sleep(RETRY_INTERVAL)
+            continue
         except Exception as e:
             logger.error(f"Error reading decoder time: {e}")
             retry_count += 1
@@ -115,29 +170,42 @@ def main():
         debug_log_file = config.debug_file
         with open(log_file, "a") as amb_raw, open(debug_log_file, "a") as amb_debug:
             while True:
-                raw_log_delim = "##############################################"
-                for data in connection.read():
-                    decoded_data = data_to_ascii(data)
-                    Write.to_file(decoded_data, amb_raw)
-                    decoded_header, decoded_body = p3decode(
-                        data, skip_crc_check=skip_crc_check
-                    )
-                    logger.debug(
-                        f"Decoded data - Header: {decoded_header}, Body: {decoded_body}"
-                    )
-                    header_msg = "Decoded Header: {}\n".format(
-                        dict_to_ascii(decoded_header)
-                    )
-                    raw_log = f"{raw_log_delim}\n{header_msg}\n{decoded_body}\n"
-                    Write.to_file(raw_log, amb_debug)
-                    if "TOR" in decoded_body["RESULT"]:
-                        if "PASSING" in decoded_body["RESULT"]["TOR"]:
-                            Write.passing_to_mysql(my_cursor, decoded_body)
-                        elif "RTC_TIME" in decoded_body["RESULT"]["TOR"]:
-                            decoder_time.set_decoder_time(
-                                int(decoded_body["RESULT"]["RTC_TIME"], 16)
-                            )
-                sleep(POLL_INTERVAL)
+                try:
+                    raw_log_delim = "##############################################"
+                    for data in connection.read():
+                        decoded_data = data_to_ascii(data)
+                        Write.to_file(decoded_data, amb_raw)
+                        decoded_header, decoded_body = p3decode(
+                            data, skip_crc_check=skip_crc_check
+                        )
+                        logger.debug(
+                            f"Decoded data - Header: {decoded_header}, Body: {decoded_body}"
+                        )
+                        header_msg = "Decoded Header: {}\n".format(
+                            dict_to_ascii(decoded_header)
+                        )
+                        raw_log = f"{raw_log_delim}\n{header_msg}\n{decoded_body}\n"
+                        Write.to_file(raw_log, amb_debug)
+                        if "TOR" in decoded_body["RESULT"]:
+                            if "PASSING" in decoded_body["RESULT"]["TOR"]:
+                                Write.passing_to_mysql(my_cursor, decoded_body)
+                            elif "RTC_TIME" in decoded_body["RESULT"]["TOR"]:
+                                decoder_time.set_decoder_time(
+                                    int(decoded_body["RESULT"]["RTC_TIME"], 16)
+                                )
+                    sleep(POLL_INTERVAL)
+                except (DecoderReadError, DecoderWriteError) as e:
+                    logger.error(f"Decoder communication error: {e}")
+                    logger.info("Attempting to reconnect to decoder...")
+                    try:
+                        connection.close()
+                    except Exception:
+                        pass  # Ignore errors when closing broken connection
+
+                    # Reconnect to decoder
+                    connection = connect_to_decoder(config.ip, config.port)
+                    RefreshTime(connection)
+                    logger.info("Reconnected successfully, resuming operation")
     except KeyboardInterrupt:
         logger.info("Closing")
         exit(0)
