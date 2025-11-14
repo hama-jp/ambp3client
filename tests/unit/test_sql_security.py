@@ -122,7 +122,9 @@ class TestHeatMethodSecurity:
         # Note: first_pass_id is None to avoid calling get_transponder during init
         mock_sql_select.side_effect = [
             [],  # settings query
-            [(1, False, None, None, 1000000, None, 0, 2000000)],  # get_heat query (first_pass_id=None)
+            [
+                (1, False, None, None, 1000000, None, 0, 2000000)
+            ],  # get_heat query (first_pass_id=None)
         ]
 
         heat = Heat(mock_heat_config, mock_decoder_time)
@@ -167,7 +169,9 @@ class TestHeatMethodSecurity:
         # Note: first_pass_id is None to avoid calling get_transponder during init
         mock_sql_select.side_effect = [
             [],  # settings query
-            [(1, False, None, None, 1000000, None, 0, 2000000)],  # get_heat query (first_pass_id=None)
+            [
+                (1, False, None, None, 1000000, None, 0, 2000000)
+            ],  # get_heat query (first_pass_id=None)
         ]
 
         heat = Heat(mock_heat_config, mock_decoder_time)

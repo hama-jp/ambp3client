@@ -127,6 +127,7 @@ def p3decode(data, skip_crc_check=True):
     Returns:
         Tuple of (header_dict, body_dict) or (None, None) on error
     """
+
     def _validate(data, skip_crc_check):
         "perform validation checks and return ready to process data or None"
         if skip_crc_check:
@@ -157,11 +158,11 @@ def p3decode(data, skip_crc_check=True):
 
         # Extract CRC from header (bytes 4-6, big-endian)
         packet_crc_bytes = data[4:6]
-        packet_crc = int.from_bytes(packet_crc_bytes, byteorder='big')
+        packet_crc = int.from_bytes(packet_crc_bytes, byteorder="big")
 
         # Create a copy of the data with CRC bytes zeroed out
         data_for_crc = bytearray(data)
-        data_for_crc[4:6] = b'\x00\x00'
+        data_for_crc[4:6] = b"\x00\x00"
 
         # Calculate CRC using the existing crc16 module
         crc_table = crc16.table()

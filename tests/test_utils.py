@@ -254,7 +254,7 @@ def calculate_and_insert_crc(hex_message):
     data = bytearray.fromhex(hex_message)
 
     # Ensure CRC bytes (4-5) are zeroed
-    data[4:6] = b'\x00\x00'
+    data[4:6] = b"\x00\x00"
 
     # Calculate CRC
     crc_table = crc16.table()

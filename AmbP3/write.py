@@ -77,7 +77,9 @@ class Cursor(object):
     def reconnect(self):
         self.reconnect_counter += 1
         if self.reconnect_counter < 10:
-            logger.info("Reconnecting to DB. Attempt: {}".format(self.reconnect_counter))
+            logger.info(
+                "Reconnecting to DB. Attempt: {}".format(self.reconnect_counter)
+            )
             try:
                 self.db.disconnect()
                 self.db.reconnect(attempts=30, delay=1)
@@ -104,7 +106,9 @@ class Cursor(object):
                 self.reconnect_counter = 0
                 return result
             else:
-                logger.info("time since last query {} expired".format(time_since_last_query))
+                logger.info(
+                    "time since last query {} expired".format(time_since_last_query)
+                )
                 self.reconnect()
                 result = self.cursor.execute(*args, **kwargs)
                 self.time_stamp = int(time())
