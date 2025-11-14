@@ -11,6 +11,11 @@ START = 0xFFFF
 
 
 def table():
+    """Generate CRC16 lookup table.
+
+    Returns:
+        List of 256 CRC16 table values for fast CRC calculation
+    """
     crctable = []
     for i in range(256):
         crc = i << 8
@@ -23,6 +28,15 @@ def table():
 
 
 def calc(msg, tbl):
+    """Calculate CRC16 checksum for message.
+
+    Args:
+        msg: Hex string representation of message
+        tbl: CRC16 lookup table from table()
+
+    Returns:
+        CRC16 checksum as integer
+    """
     try:
         ba = bytearray.fromhex(msg)
     except ValueError:

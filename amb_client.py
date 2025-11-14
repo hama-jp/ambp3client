@@ -23,6 +23,11 @@ logger = logging.getLogger("amb_client")
 
 
 def main():
+    """Main entry point for AMB P3 client application.
+
+    Connects to AMB decoder, receives passing records, and stores them in MySQL database.
+    Also starts a time server to broadcast decoder time to other applications.
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

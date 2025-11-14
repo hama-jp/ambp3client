@@ -83,7 +83,14 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Database connection manager
 class DatabaseManager:
+    """Manages database connections with automatic reconnection."""
+
     def __init__(self, config: AppConfig):
+        """Initialize database manager.
+
+        Args:
+            config: AppConfig instance with database connection parameters
+        """
         self.config = config
         self.connection = None
 
@@ -118,7 +125,15 @@ class DatabaseManager:
             self.connect()
 
     def execute_query(self, query: str, params: tuple = None):
-        """Execute query and return results"""
+        """Execute query and return results.
+
+        Args:
+            query: SQL query string
+            params: Optional query parameters tuple
+
+        Returns:
+            List of result dictionaries
+        """
         self.ensure_connection()
         cursor = self.connection.cursor(dictionary=True)
         try:
@@ -137,10 +152,18 @@ class DatabaseManager:
 
 # WebSocket connection manager
 class ConnectionManager:
+    """Manages WebSocket connections for real-time updates."""
+
     def __init__(self):
+        """Initialize connection manager."""
         self.active_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
+        """Accept and register new WebSocket connection.
+
+        Args:
+            websocket: WebSocket connection to register
+        """
         await websocket.accept()
         self.active_connections.append(websocket)
         logger.info(
@@ -148,13 +171,22 @@ class ConnectionManager:
         )
 
     def disconnect(self, websocket: WebSocket):
+        """Unregister WebSocket connection.
+
+        Args:
+            websocket: WebSocket connection to unregister
+        """
         self.active_connections.remove(websocket)
         logger.info(
             f"Client disconnected. Total connections: {len(self.active_connections)}"
         )
 
     async def broadcast(self, message: dict):
-        """Broadcast message to all connected clients"""
+        """Broadcast message to all connected clients.
+
+        Args:
+            message: Dictionary message to broadcast as JSON
+        """
         if not self.active_connections:
             return
 

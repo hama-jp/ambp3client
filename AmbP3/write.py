@@ -13,6 +13,19 @@ QUERY_TIMEOUT_SECONDS = 300
 def open_mysql_connection(
     user, db, password, autocommit=True, host="127.0.0.1", port=3306
 ):
+    """Open MySQL database connection.
+
+    Args:
+        user: Database username
+        db: Database name
+        password: Database password
+        autocommit: Enable autocommit mode (default: True)
+        host: Database host (default: "127.0.0.1")
+        port: Database port (default: 3306)
+
+    Returns:
+        MySQL connection object, or None on failure
+    """
     try:
         sql_con = mysqlconnector.connect(
             user=user, db=db, password=password, host=host, port=port
@@ -25,6 +38,15 @@ def open_mysql_connection(
 
 
 def dict_to_sqlquery(data_dict, table):
+    """Convert dictionary to SQL INSERT query with parameterized values.
+
+    Args:
+        data_dict: Dictionary with column names as keys
+        table: Table name for INSERT
+
+    Returns:
+        SQL query string with %s placeholders for values
+    """
     columns_string = "( {} )".format(",".join(data_dict.keys()))
     values_string = "( {} )".format(",".join(["%s"] * len(data_dict.values())))
     # Table and column names are from trusted internal source, values use parameterized placeholders
@@ -35,8 +57,16 @@ def dict_to_sqlquery(data_dict, table):
 
 
 class Write:
+    """Static methods for writing data to files and database."""
+
     @staticmethod
     def to_file(data, file_handler):
+        """Write data to file with flush.
+
+        Args:
+            data: Data to write
+            file_handler: Open file handle
+        """
         if not file_handler.closed:
             try:
                 file_handler.write(f"\n{data}")
@@ -48,6 +78,13 @@ class Write:
 
     @staticmethod
     def passing_to_mysql(my_cursor, result, table="passes"):
+        """Write passing record to MySQL database.
+
+        Args:
+            my_cursor: Cursor instance with execute method
+            result: Decoded passing record dictionary
+            table: Database table name (default: "passes")
+        """
         result = result["RESULT"]
         mysql_p3_map = {
             "pass_id": "PASSING_NUMBER",
@@ -71,13 +108,22 @@ class Write:
 
 
 class Cursor(object):
+    """Wrapper for MySQL cursor with automatic reconnection on timeout."""
+
     def __init__(self, db, cursor):
+        """Initialize cursor wrapper.
+
+        Args:
+            db: MySQL connection object
+            cursor: MySQL cursor object
+        """
         self.db = db
         self.cursor = cursor
         self.reconnect_counter = 0
         self.time_stamp = int(time())
 
     def reconnect(self):
+        """Attempt to reconnect to database with retry logic."""
         self.reconnect_counter += 1
         if self.reconnect_counter < 10:
             logger.info(
@@ -99,6 +145,15 @@ class Cursor(object):
         self.cursor = self.db.cursor()
 
     def execute(self, *args, **kwargs):
+        """Execute query with automatic timeout handling and reconnection.
+
+        Args:
+            *args: Positional arguments for cursor.execute
+            **kwargs: Keyword arguments for cursor.execute
+
+        Returns:
+            Result of cursor.execute
+        """
         try:
             time_since_last_query = int(time()) - self.time_stamp
             if time_since_last_query < QUERY_TIMEOUT_SECONDS:
@@ -128,7 +183,17 @@ class Cursor(object):
             logger.error("ERROR: {}".format(e))
 
     def fetchone(self):
+        """Fetch one result row.
+
+        Returns:
+            Single result row from cursor
+        """
         return self.cursor.fetchone()
 
     def fetchall(self):
+        """Fetch all result rows.
+
+        Returns:
+            All result rows from cursor
+        """
         return self.cursor.fetchall()

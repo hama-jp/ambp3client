@@ -3,6 +3,8 @@ from logging import handlers as logging_handlers
 
 
 class Logg:
+    """Logger configuration and creation utility."""
+
     LOGMAXSIZE = 50000000
     LOGBACKUPCOUT = 2
     LOGLEVEL = logging.ERROR
@@ -14,7 +16,18 @@ class Logg:
         loglevel=LOGLEVEL,
         logbackupcount=LOGBACKUPCOUT,
     ):
-        """create and returns logger object that will log to file"""
+        """Create and return logger object with optional file logging.
+
+        Args:
+            name: Logger name
+            logfile: Optional path to log file for file logging
+            logmaxsize: Maximum log file size in bytes before rotation
+            loglevel: Logging level (default: ERROR)
+            logbackupcount: Number of backup log files to keep
+
+        Returns:
+            Configured logger instance
+        """
         logger = logging.getLogger(name)
         logger.setLevel(logging.DEBUG)
         format = "%(asctime)s : %(levelname)s : %(name)s : %(message)s"

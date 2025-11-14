@@ -11,6 +11,11 @@ PORT = 5403
 
 
 def get_args():
+    """Parse command-line arguments.
+
+    Returns:
+        Parsed arguments with ip, port, INTERVAL, and hexmsg
+    """
     parser = ArgumentParser()
     parser.add_argument(
         "-H", "--host", help="IP address to bind on", default=ADDR, dest="ip"
@@ -32,6 +37,16 @@ def get_args():
 
 
 def amb_send_msg(hexmsg, ip=ADDR, port=PORT):
+    """Send hex message to AMB decoder and receive response.
+
+    Args:
+        hexmsg: Hex string message to send
+        ip: Decoder IP address
+        port: Decoder port number
+
+    Returns:
+        Tuple of (decoded_header, decoded_body)
+    """
     connection = Connection(ip, port)
     connection.connect()
     try:
@@ -52,6 +67,7 @@ def amb_send_msg(hexmsg, ip=ADDR, port=PORT):
 
 
 def main():
+    """Main entry point for sending message to AMB decoder."""
     config = get_args()
     decoded_header, decoded_body = amb_send_msg(config.hexmsg, config.ip, config.port)
     print(decoded_header, decoded_body)

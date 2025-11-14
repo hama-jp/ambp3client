@@ -20,7 +20,15 @@ DefaultConfig = {
 
 
 class Config:
+    """Configuration manager for AMB P3 client."""
+
     def __init__(self, cli_args, config_file=DEFAULT_CONFIG_FILE):
+        """Initialize configuration from file and CLI arguments.
+
+        Args:
+            cli_args: Parsed command-line arguments
+            config_file: Path to YAML configuration file
+        """
         self.conf = DefaultConfig
         try:
             with open(cli_args.config_file, "rb") as config_file_handler:
@@ -44,7 +52,16 @@ class Config:
 
 
 def get_args(PORT=DEFAULT_PORT, IP=DEFAULT_IP, config_file=DEFAULT_CONFIG_FILE):
-    """args that overwrite AmbP3.config"""
+    """Parse command-line arguments and load configuration.
+
+    Args:
+        PORT: Default port number
+        IP: Default IP address
+        config_file: Default configuration file path
+
+    Returns:
+        Config instance with merged configuration from file and CLI
+    """
     args = ArgumentParser()
     args.add_argument("-f", "--config", dest="config_file", default=config_file)
     args.add_argument("-i", "--ip", help="AMB decoder IP")
