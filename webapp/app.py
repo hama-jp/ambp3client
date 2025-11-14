@@ -14,7 +14,7 @@ from typing import Dict, List, Optional
 
 import mysql.connector
 import yaml
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -226,6 +226,23 @@ class LapStats(BaseModel):
     latest_lap_time: Optional[int] = None
 
 
+class CarCreate(BaseModel):
+    transponder_id: int
+    car_number: Optional[int] = None
+    name: Optional[str] = None
+
+
+class CarUpdate(BaseModel):
+    car_number: Optional[int] = None
+    name: Optional[str] = None
+
+
+class Car(BaseModel):
+    transponder_id: int
+    car_number: Optional[int] = None
+    name: Optional[str] = None
+
+
 # Global instances
 config = AppConfig(load_config())
 db_manager = DatabaseManager(config)
@@ -255,6 +272,12 @@ async def shutdown_event():
 async def root():
     """Serve main dashboard HTML"""
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+@app.get("/admin")
+async def admin():
+    """Serve admin panel HTML"""
+    return FileResponse(str(STATIC_DIR / "admin.html"))
 
 
 @app.get("/api/transponders", response_model=List[TransponderInfo])
@@ -330,6 +353,133 @@ async def get_lap_stats(transponder_id: int, limit: int = 50):
     )
 
     return stats
+
+
+# Admin API endpoints for car management
+@app.get("/api/admin/cars", response_model=List[Car])
+async def get_all_cars():
+    """Get all registered cars"""
+    query = "SELECT transponder_id, car_number, name FROM cars ORDER BY transponder_id"
+    results = db_manager.execute_query(query)
+    return [Car(**row) for row in results]
+
+
+@app.post("/api/admin/cars", response_model=Car)
+async def create_car(car: CarCreate):
+    """Create a new car entry"""
+    db_manager.ensure_connection()
+    cursor = db_manager.connection.cursor()
+
+    try:
+        # Check if transponder already exists
+        check_query = "SELECT transponder_id FROM cars WHERE transponder_id = %s"
+        cursor.execute(check_query, (car.transponder_id,))
+        if cursor.fetchone():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Transponder ID {car.transponder_id} already exists",
+            )
+
+        # Insert new car
+        insert_query = """
+            INSERT INTO cars (transponder_id, car_number, name)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(insert_query, (car.transponder_id, car.car_number, car.name))
+        db_manager.connection.commit()
+
+        logger.info(f"Created car: {car.transponder_id}")
+        return Car(**car.dict())
+    except mysql.connector.Error as e:
+        db_manager.connection.rollback()
+        logger.error(f"Database error creating car: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        cursor.close()
+
+
+@app.get("/api/admin/cars/{transponder_id}", response_model=Car)
+async def get_car(transponder_id: int):
+    """Get a specific car by transponder ID"""
+    query = "SELECT transponder_id, car_number, name FROM cars WHERE transponder_id = %s"
+    results = db_manager.execute_query(query, (transponder_id,))
+
+    if not results:
+        raise HTTPException(
+            status_code=404, detail=f"Car with transponder ID {transponder_id} not found"
+        )
+
+    return Car(**results[0])
+
+
+@app.put("/api/admin/cars/{transponder_id}", response_model=Car)
+async def update_car(transponder_id: int, car: CarUpdate):
+    """Update car information"""
+    db_manager.ensure_connection()
+    cursor = db_manager.connection.cursor()
+
+    try:
+        # Check if car exists
+        check_query = "SELECT transponder_id FROM cars WHERE transponder_id = %s"
+        cursor.execute(check_query, (transponder_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Car with transponder ID {transponder_id} not found",
+            )
+
+        # Update car
+        update_query = """
+            UPDATE cars
+            SET car_number = %s, name = %s
+            WHERE transponder_id = %s
+        """
+        cursor.execute(update_query, (car.car_number, car.name, transponder_id))
+        db_manager.connection.commit()
+
+        logger.info(f"Updated car: {transponder_id}")
+
+        # Return updated car
+        return Car(
+            transponder_id=transponder_id, car_number=car.car_number, name=car.name
+        )
+    except mysql.connector.Error as e:
+        db_manager.connection.rollback()
+        logger.error(f"Database error updating car: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        cursor.close()
+
+
+@app.delete("/api/admin/cars/{transponder_id}")
+async def delete_car(transponder_id: int):
+    """Delete a car"""
+    db_manager.ensure_connection()
+    cursor = db_manager.connection.cursor()
+
+    try:
+        # Check if car exists
+        check_query = "SELECT transponder_id FROM cars WHERE transponder_id = %s"
+        cursor.execute(check_query, (transponder_id,))
+        if not cursor.fetchone():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Car with transponder ID {transponder_id} not found",
+            )
+
+        # Delete car
+        delete_query = "DELETE FROM cars WHERE transponder_id = %s"
+        cursor.execute(delete_query, (transponder_id,))
+        db_manager.connection.commit()
+
+        logger.info(f"Deleted car: {transponder_id}")
+        return {"message": f"Car {transponder_id} deleted successfully"}
+    except mysql.connector.Error as e:
+        db_manager.connection.rollback()
+        logger.error(f"Database error deleting car: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        cursor.close()
 
 
 @app.websocket("/ws")
