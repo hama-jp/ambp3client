@@ -12,6 +12,11 @@ PORT = 12001
 
 
 def get_args():
+    """Parse command-line arguments for test server.
+
+    Returns:
+        Parsed arguments with INPUT_FILE, ADDR, PORT, and INTERVAL
+    """
     parser = ArgumentParser()
     parser.add_argument(
         "INPUT_FILE", help="amb.out HEX file location", default=INPUT_FILE, nargs="?"
@@ -44,6 +49,15 @@ def get_args():
 
 
 def create_sock(ADDR, PORT):
+    """Create listening socket and accept one connection.
+
+    Args:
+        ADDR: IP address to bind to
+        PORT: Port number to bind to
+
+    Returns:
+        Tuple of (connection, server_socket)
+    """
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((ADDR, PORT))
@@ -55,6 +69,14 @@ def create_sock(ADDR, PORT):
 
 
 def send_net(ADDR, PORT, INPUT_FILE, INTERVAL=0.5):
+    """Read hex data from file and send over network connection.
+
+    Args:
+        ADDR: IP address to bind to
+        PORT: Port number to bind to
+        INPUT_FILE: Path to file containing hex-encoded AMB data
+        INTERVAL: Delay between sending messages in seconds
+    """
     conn, s = create_sock(ADDR, PORT)
     with open(INPUT_FILE, "r") as fd:
         while True:
@@ -86,6 +108,10 @@ def send_net(ADDR, PORT, INPUT_FILE, INTERVAL=0.5):
 
 
 def main():
+    """Main entry point for test server.
+
+    Continuously runs test server, restarting on connection close.
+    """
     args = get_args()
     while True:
         print("Starting server")

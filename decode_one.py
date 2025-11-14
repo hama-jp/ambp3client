@@ -9,12 +9,22 @@ DEFAULT_DATA = "8e023300c922000001000104a468020003042f79340004087802cd0520830500
 
 
 def get_args():
+    """Parse command-line arguments.
+
+    Returns:
+        Parsed arguments with data field
+    """
     args = ArgumentParser()
     args.add_argument("data", default=DEFAULT_DATA, nargs="?")
     return args.parse_args()
 
 
 def main():
+    """Decode single P3 protocol message from command line.
+
+    Returns:
+        Tuple of (header, body) from decoded message
+    """
     args = get_args()
     data = args.data.rstrip()
     result = decode(hex_to_binary(data))

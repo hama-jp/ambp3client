@@ -11,12 +11,21 @@ logger = Logg.create_logger("decoder")
 
 
 class Connection:
+    """Manages TCP connection to AMB decoder."""
+
     def __init__(self, ip, port):
+        """Initialize connection parameters.
+
+        Args:
+            ip: IP address of the decoder
+            port: Port number of the decoder
+        """
         self.ip = ip
         self.port = port
         self.socket = socket.socket()
 
     def close(self):
+        """Close the socket connection."""
         self.socket.close()
 
     def connect(self, timeout=5.0):
@@ -42,8 +51,17 @@ class Connection:
             exit(1)
 
     def split_records(self, data):
-        """some times server send 2 records in one message
-        concatenated, you can find those by '8f8e' EOR and SOR next to each other"""
+        """Split concatenated records in received data.
+
+        Sometimes server sends 2 records in one message concatenated.
+        These can be identified by '8f8e' (EOR followed by SOR) bytes next to each other.
+
+        Args:
+            data: Raw bytes received from socket
+
+        Returns:
+            List of bytearrays, each containing a single record
+        """
         byte_array = bytearray(data)
         size = len(byte_array)
         split_data = [bytearray()]
@@ -83,6 +101,14 @@ class Connection:
         return self.split_records(data)
 
     def write(self, data):
+        """Write data to socket.
+
+        Args:
+            data: Bytes to send to the decoder
+
+        Raises:
+            SystemExit: On socket error or timeout
+        """
         try:
             data = self.socket.send(data)
         except socket.error:
@@ -93,24 +119,54 @@ class Connection:
 
 
 def hex_to_binary(data):
+    """Convert hex string to binary bytes.
+
+    Args:
+        data: Hex string
+
+    Returns:
+        Bytes representation of the hex string
+    """
     bin_str = bin(int(data, 16))
     byte_str = int(bin_str, 2).to_bytes((len(bin_str) // 8), "big")
     return byte_str
 
 
 def bin_to_decimal(bin_data):
+    """Convert binary data to decimal integer.
+
+    Args:
+        bin_data: Binary data as bytes
+
+    Returns:
+        Integer value parsed from hex representation
+    """
     return int(bin_data.decode(), 16)
 
 
 def bin_data_to_ascii(bin_data):
-    "Converts binary input HEX data into ascii"
+    """Convert binary input HEX data into ASCII string.
+
+    Args:
+        bin_data: Binary data as bytes
+
+    Returns:
+        ASCII hex string representation
+    """
     data = codecs.encode(bin_data, "hex")
     decoded_data = data.decode("ascii")
     return "{}".format(decoded_data)
 
 
 def bin_dict_to_ascii(dict):
-    "takes as input Dict with Binary values, converts into ascii, returns converted dict"
+    """Convert dict with binary values to dict with ASCII hex strings.
+
+    Args:
+        dict: Dictionary with binary byte values
+
+    Returns:
+        Dictionary with ASCII hex string values
+    """
     for key, value in dict.items():
         dict[key] = bin_data_to_ascii(value)
     return dict
@@ -129,7 +185,15 @@ def p3decode(data, skip_crc_check=True):
     """
 
     def _validate(data, skip_crc_check):
-        "perform validation checks and return ready to process data or None"
+        """Perform validation checks on packet data.
+
+        Args:
+            data: Raw packet data as bytes
+            skip_crc_check: Whether to skip CRC validation
+
+        Returns:
+            Validated and processed data, or None if validation fails
+        """
         if skip_crc_check:
             logger.debug("CRC check skipped (skip_crc_check=True)")
         else:
@@ -179,8 +243,17 @@ def p3decode(data, skip_crc_check=True):
         return data
 
     def _unescape(data):
-        "If the value is 0x8d, 0x8e or 0x8f and it's not the first or last byte of the message,\
-         the value is prefixed/escaped by 0x8D followed by the byte value plus 0x20."
+        """Unescape AMB P3 protocol escaped bytes.
+
+        If the value is 0x8d, 0x8e or 0x8f and it's not the first or last byte,
+        the value is prefixed/escaped by 0x8D followed by the byte value plus 0x20.
+
+        Args:
+            data: Raw packet data as bytes
+
+        Returns:
+            Unescaped data as bytes
+        """
         new_data = bytearray(data)[
             1:-1
         ]  # first and last character should not be escaped
@@ -200,10 +273,25 @@ def p3decode(data, skip_crc_check=True):
         return bytes(escaped_data)
 
     def _check_length(data):
-        "check if data is of correct length"
+        """Check if data is of correct length.
+
+        Args:
+            data: Packet data as bytes
+
+        Returns:
+            Data if length is valid
+        """
         return data
 
     def _get_header(data):
+        """Extract and parse packet header.
+
+        Args:
+            data: Packet data as bytes
+
+        Returns:
+            Dictionary with header fields (SOR, Version, Length, CRC, Flags, TOR)
+        """
         str_header = data[0:10]
         header = {
             "SOR": str_header[0:1],
@@ -216,7 +304,17 @@ def p3decode(data, skip_crc_check=True):
         return header
 
     def _decode_record(tor, tor_body):
-        """record type is always followed by 1 byte representing the record length"""
+        """Decode record body based on Type of Record (TOR).
+
+        Record type is always followed by 1 byte representing the record length.
+
+        Args:
+            tor: Type of Record as bytes
+            tor_body: Record body data as bytes
+
+        Returns:
+            Dictionary with decoded record fields
+        """
         hex_tor = codecs.encode(tor, "hex")
         logger.info("tor:{} converted to hex_tor: {}".format(tor, hex_tor))
         if hex_tor in records.type_of_records:
@@ -265,6 +363,15 @@ def p3decode(data, skip_crc_check=True):
         return DECODED
 
     def _decode_body(tor, data):
+        """Decode packet body based on TOR.
+
+        Args:
+            tor: Type of Record as bytes
+            data: Full packet data as bytes
+
+        Returns:
+            Dictionary with RESULT key containing decoded body fields
+        """
         tor_body = _get_tor_body(data)
         try:
             result = _decode_record(tor, tor_body)
@@ -278,6 +385,14 @@ def p3decode(data, skip_crc_check=True):
             return {"RESULT": {}}
 
     def _get_tor_body(data):
+        """Extract record body from packet data.
+
+        Args:
+            data: Full packet data as bytes
+
+        Returns:
+            Body portion of the packet (after 10-byte header)
+        """
         tor_body = data[10:]
         return tor_body
 

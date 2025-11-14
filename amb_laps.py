@@ -21,6 +21,14 @@ HEAT_PROCESS_INTERVAL = 0.5  # Heat processing interval in seconds
 
 
 def is_int(string):
+    """Check if string can be converted to integer.
+
+    Args:
+        string: String to check
+
+    Returns:
+        True if convertible to int, False otherwise
+    """
     try:
         int(string)
         return True
@@ -29,7 +37,15 @@ def is_int(string):
 
 
 def list_to_dict(mylist, index=0):
-    "convert a list, tuple into dict by index key"
+    """Convert list or tuple into dict using specified index as key.
+
+    Args:
+        mylist: List or tuple of items
+        index: Index to use as dictionary key (default: 0)
+
+    Returns:
+        Dictionary with items keyed by value at specified index
+    """
     foo = {}
     for item in mylist:
         key = item[index]
@@ -40,6 +56,17 @@ def list_to_dict(mylist, index=0):
 
 
 def mysql_connect(conf):
+    """Connect to MySQL database using configuration.
+
+    Args:
+        conf: Configuration dictionary with MySQL connection parameters
+
+    Returns:
+        MySQL connection object
+
+    Raises:
+        SystemExit: If connection fails
+    """
     try:
         con = open_mysql_connection(
             user=conf["mysql_user"],
@@ -109,6 +136,8 @@ def sql_select(cursor, query, params=None):
 
 
 class Pass:
+    """Represents a single transponder pass record."""
+
     def __init__(
         self,
         db_entry_id,
@@ -120,6 +149,18 @@ class Pass:
         flags,
         decoder_id,
     ):
+        """Initialize Pass record.
+
+        Args:
+            db_entry_id: Database entry ID
+            pass_id: Unique pass identifier
+            transponder_id: Transponder identifier
+            rtc_time: Real-time clock timestamp
+            strength: Signal strength
+            hits: Number of hits
+            flags: Pass flags
+            decoder_id: Decoder identifier
+        """
         self.db_entry_id = db_entry_id
         self.pass_id = pass_id
         self.transponder_id = transponder_id
@@ -131,6 +172,8 @@ class Pass:
 
 
 class Heat:
+    """Manages racing heat session with lap timing and processing."""
+
     def __init__(
         self,
         conf,
@@ -140,6 +183,16 @@ class Heat:
         minimum_lap_time=DEFAULT_MINIMUM_LAP_TIME,
         race_flag=0,
     ):
+        """Initialize Heat session.
+
+        Args:
+            conf: Configuration dictionary
+            decoder_time: DecoderTime instance for time synchronization
+            heat_duration: Duration of heat in seconds
+            heat_cooldown: Cooldown period after heat in seconds
+            minimum_lap_time: Minimum valid lap time in seconds
+            race_flag: Initial race flag state (0=green, 1=yellow, 2=checkered)
+        """
         self.conf = conf
         self.dt = decoder_time
         self.mysql = mysql_connect(conf)
@@ -195,6 +248,14 @@ class Heat:
             return self.get_heat()
 
     def is_running(self, heat_id):
+        """Check if heat is still running.
+
+        Args:
+            heat_id: Heat identifier
+
+        Returns:
+            True if heat is running, False if finished
+        """
         query = "select heat_finished from heats where heat_id = %s"
         result = sql_select(self.cursor, query, (heat_id,))
         result_len = len(list(result))
@@ -207,18 +268,38 @@ class Heat:
             return True
 
     def get_pass_timestamp(self, pass_id):
+        """Get timestamp for a specific pass.
+
+        Args:
+            pass_id: Pass identifier
+
+        Returns:
+            RTC timestamp for the pass
+        """
         return sql_select(
             self.cursor, "select rtc_time from passes where pass_id=%s", (pass_id,)
         )[0][0]
 
     def get_transponder(self, pass_id):
+        """Get transponder ID for a specific pass.
+
+        Args:
+            pass_id: Pass identifier
+
+        Returns:
+            Transponder ID
+        """
         query = "select transponder_id from passes where pass_id=%s"
         result = sql_select(self.cursor, query, (pass_id,))[0][0]
         transponder_id = result
         return transponder_id
 
     def process_heat_passes(self):
-        "process heat_passes"
+        """Process unprocessed passes for current heat.
+
+        Processes all passes within heat duration and adds them to laps table.
+        Handles race flag waving and heat finishing.
+        """
         if bool(self.first_pass_id):
             sleep(HEAT_PROCESS_INTERVAL)
             self.rtc_max_duration = self.rtc_time_start + (
@@ -261,6 +342,10 @@ class Heat:
                         self.wave_finish_flag()
 
     def finish_heat(self):
+        """Mark heat as finished in database.
+
+        Updates heat record with last pass ID and sets heat_finished flag.
+        """
         query = (
             "select pass_id from laps where heat_id=%s order by pass_id desc limit 1"
         )
@@ -281,6 +366,14 @@ class Heat:
         self.heat_flag = 2
 
     def valid_lap_time(self, pas):
+        """Check if lap time is valid based on minimum lap time.
+
+        Args:
+            pas: Pass instance to validate
+
+        Returns:
+            True if lap time is valid, False otherwise (pass is deleted)
+        """
         self.previous_lap_times = {}
         previous_lap_query = """select rtc_time from laps where heat_id=%s
  and transponder_id=%s and pass_id<%s order by pass_id desc limit 1"""
@@ -307,11 +400,18 @@ class Heat:
             return False
 
     def wave_finish_flag(self):
+        """Set race flag to yellow (1) indicating heat duration ended."""
         query = "update  heats set race_flag = 1 where heat_id=%s"
         sql_write(self.mycon, query, (self.heat_id,))
         self.race_flag = 1
 
     def add_pass_to_laps(self, heat_id, pas):
+        """Add valid pass to laps table.
+
+        Args:
+            heat_id: Heat identifier
+            pas: Pass instance to add
+        """
         lap = {
             "heat_id": heat_id,
             "pass_id": pas.pass_id,
@@ -395,6 +495,11 @@ and rtc_time > %s limit 1"""
                     return starting_pass.pass_id, self.rtc_time_start, self.rtc_time_end
 
     def check_if_all_finished(self):
+        """Check if all racers have finished the heat.
+
+        Returns:
+            True if all racers have passed after heat end time, False otherwise
+        """
         query_number_of_racers = (
             "select count(distinct transponder_id) from laps where heat_id=%s"
         )
@@ -418,6 +523,10 @@ and rtc_time > %s limit 1"""
             return False
 
     def run_heat(self):
+        """Main loop for running heat session.
+
+        Continuously processes passes until heat is finished.
+        """
         logging.debug("RUNNING HEAT")
         current_transponder_time = self.get_decoder_time()
         while self.is_running(self.heat_id):
@@ -452,6 +561,11 @@ and rtc_time > %s limit 1"""
                 self.process_heat_passes()
 
     def get_decoder_time(self):
+        """Get current decoder time, waiting if not available.
+
+        Returns:
+            Current decoder RTC timestamp
+        """
         while not self.dt.decoder_time:
             sleep(1)
             logging.error("Waiting on time")
@@ -462,7 +576,14 @@ and rtc_time > %s limit 1"""
             return self.dt.decoder_time
 
     def get_kart_id(self, transponder_id):
-        """converts transponder name to kart number and kart name"""
+        """Convert transponder ID to kart number and name.
+
+        Args:
+            transponder_id: Transponder identifier
+
+        Returns:
+            Tuple of (name, kart_number) or transponder_id if not found
+        """
         query = "select name, kart_number from karts where transponder_id = %s"
         result = sql_select(self.cursor, query, (transponder_id,))
         if len(result) == 1:
@@ -472,7 +593,10 @@ and rtc_time > %s limit 1"""
 
 
 def main():
-    """IMPLEMENT CONNECT TO CLIENT PYTHON AND GET TIME ALL THE TIME"""
+    """Main entry point for lap timing application.
+
+    Continuously processes heats and manages lap timing from decoder passes.
+    """
     config = get_args()
     conf = config.conf
     logging.basicConfig(level=logging.DEBUG)
