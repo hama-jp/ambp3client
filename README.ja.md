@@ -41,7 +41,32 @@ git clone https://github.com/hama-jp/ambp3client
 cd ambp3client
 ```
 
-### 2. 依存パッケージのインストール
+### 2. 仮想環境の作成と有効化
+
+システムのPython環境を汚さないため、仮想環境の使用を強く推奨します。
+
+**仮想環境の作成:**
+```bash
+python3 -m venv venv
+```
+
+**仮想環境の有効化:**
+
+Linux/macOSの場合:
+```bash
+source venv/bin/activate
+```
+
+Windowsの場合:
+```bash
+venv\Scripts\activate
+```
+
+仮想環境が有効化されると、プロンプトの先頭に `(venv)` が表示されます。
+
+### 3. 依存パッケージのインストール
+
+仮想環境を有効化した状態で、必要なパッケージをインストールします。
 
 **クライアント（基本機能）のみ:**
 ```bash
@@ -60,7 +85,9 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-### 3. データベースのセットアップ
+> **注意:** 仮想環境を終了するには `deactivate` コマンドを実行します。次回起動時には再度 `source venv/bin/activate` で有効化する必要があります。
+
+### 4. データベースのセットアップ
 
 MySQLデータベースとテーブルを作成します：
 

@@ -49,7 +49,30 @@ FastAPIとWebSocketを使用したリアルタイムダッシュボードで、�
 
 ## インストール
 
-### 1. 依存パッケージのインストール
+### 前提条件
+
+メインプロジェクトのREADME.ja.mdに従って、以下が完了していることを確認してください：
+- リポジトリのクローン
+- 仮想環境の作成と有効化
+- 基本的な依存パッケージのインストール
+
+### 1. 仮想環境の有効化
+
+仮想環境がまだ有効化されていない場合は、有効化します：
+
+Linux/macOSの場合:
+```bash
+source venv/bin/activate
+```
+
+Windowsの場合:
+```bash
+venv\Scripts\activate
+```
+
+### 2. Webアプリ用依存パッケージのインストール
+
+仮想環境を有効化した状態で、Webダッシュボード用のパッケージをインストールします：
 
 ```bash
 pip install -r requirements-webapp.txt
@@ -61,7 +84,7 @@ pip install -r requirements-webapp.txt
 - `mysql-connector-python>=8.0.33`
 - `pyyaml>=6.0`
 
-### 2. 設定ファイル
+### 3. 設定ファイル
 
 プロジェクトルートの`conf.yaml`または`local_conf.yaml`で設定します：
 
@@ -395,7 +418,14 @@ ps aux | grep amb_
 
 ### ローカル開発環境
 
+仮想環境を有効化した状態で開発を行います：
+
 ```bash
+# 仮想環境を有効化（未実行の場合）
+source venv/bin/activate  # Linux/macOS
+# または
+venv\Scripts\activate     # Windows
+
 # 開発用の依存関係をインストール
 pip install -r requirements-dev.txt
 
