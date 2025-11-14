@@ -328,6 +328,22 @@ bandit -r AmbP3/
 black --check AmbP3/ tests/
 ```
 
+### 開発ツール
+
+#### 生データ記録ツール
+
+P3プロトコルの公式仕様が公開されていないため、実際のデコーダーの生データを記録・解析するツールが用意されています。
+
+```bash
+# デコーダーの生データを記録
+./tools/record_raw_data.py -f local_conf.yaml
+
+# 出力ファイルを指定
+./tools/record_raw_data.py -f local_conf.yaml -o captured_data.jsonl
+```
+
+詳細は [tools/README.md](tools/README.md) を参照してください。
+
 ## データベーススキーマ
 
 ### passes テーブル
