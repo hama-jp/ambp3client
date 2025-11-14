@@ -27,7 +27,10 @@ def open_mysql_connection(
 def dict_to_sqlquery(data_dict, table):
     columns_string = "( {} )".format(",".join(data_dict.keys()))
     values_string = "( {} )".format(",".join(["%s"] * len(data_dict.values())))
-    sql = """INSERT INTO {} {} VALUES {}""".format(table, columns_string, values_string)
+    # Table and column names are from trusted internal source, values use parameterized placeholders
+    sql = """INSERT INTO {} {} VALUES {}""".format(  # nosec
+        table, columns_string, values_string
+    )
     return sql
 
 
@@ -77,7 +80,9 @@ class Cursor(object):
     def reconnect(self):
         self.reconnect_counter += 1
         if self.reconnect_counter < 10:
-            logger.info("Reconnecting to DB. Attempt: {}".format(self.reconnect_counter))
+            logger.info(
+                "Reconnecting to DB. Attempt: {}".format(self.reconnect_counter)
+            )
             try:
                 self.db.disconnect()
                 self.db.reconnect(attempts=30, delay=1)
@@ -104,7 +109,9 @@ class Cursor(object):
                 self.reconnect_counter = 0
                 return result
             else:
-                logger.info("time since last query {} expired".format(time_since_last_query))
+                logger.info(
+                    "time since last query {} expired".format(time_since_last_query)
+                )
                 self.reconnect()
                 result = self.cursor.execute(*args, **kwargs)
                 self.time_stamp = int(time())

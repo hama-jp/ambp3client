@@ -23,7 +23,10 @@ logger = logging.getLogger("amb_client")
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     logger.info("************ STARTING *******************")
     config = get_args()
     conf = config.conf
@@ -70,7 +73,9 @@ def main():
         try:
             for data in connection.read():
                 decoded_data = data_to_ascii(data)
-                decoded_header, decoded_body = p3decode(data, skip_crc_check=skip_crc_check)
+                decoded_header, decoded_body = p3decode(
+                    data, skip_crc_check=skip_crc_check
+                )
                 if (
                     decoded_body
                     and "RESULT" in decoded_body
@@ -109,8 +114,12 @@ def main():
                 for data in connection.read():
                     decoded_data = data_to_ascii(data)
                     Write.to_file(decoded_data, amb_raw)
-                    decoded_header, decoded_body = p3decode(data, skip_crc_check=skip_crc_check)
-                    logger.debug(f"Decoded data - Header: {decoded_header}, Body: {decoded_body}")
+                    decoded_header, decoded_body = p3decode(
+                        data, skip_crc_check=skip_crc_check
+                    )
+                    logger.debug(
+                        f"Decoded data - Header: {decoded_header}, Body: {decoded_body}"
+                    )
                     header_msg = "Decoded Header: {}\n".format(
                         dict_to_ascii(decoded_header)
                     )
