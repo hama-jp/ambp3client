@@ -66,10 +66,10 @@ class LapTimerApp {
                 const option = document.createElement('option');
                 option.value = trans.transponder_id;
 
-                if (trans.name && trans.kart_number) {
-                    option.textContent = `#${trans.kart_number} - ${trans.name} (ID: ${trans.transponder_id})`;
-                } else if (trans.kart_number) {
-                    option.textContent = `#${trans.kart_number} (ID: ${trans.transponder_id})`;
+                if (trans.name && trans.car_number) {
+                    option.textContent = `#${trans.car_number} - ${trans.name} (ID: ${trans.transponder_id})`;
+                } else if (trans.car_number) {
+                    option.textContent = `#${trans.car_number} (ID: ${trans.transponder_id})`;
                 } else {
                     option.textContent = `トランスポンダー ${trans.transponder_id}`;
                 }

@@ -1,6 +1,6 @@
 # AMB Decoder P3 Client
 
-Python implementation for AMB Decoder P3 client, designed to interface with AMB timing systems for kart racing and motorsports.
+Python implementation for AMB Decoder P3 client, designed to interface with AMB timing systems for RC car racing and motorsports.
 
 ## Overview
 

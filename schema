@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS heats (
     PRIMARY KEY (heat_id)
 )  ENGINE=INNODB;
 
-CREATE TABLE IF NOT EXISTS karts (
+CREATE TABLE IF NOT EXISTS cars (
     name CHAR(20),
-    kart_number INT(3) UNSIGNED NOT NULL UNIQUE,
+    car_number INT(3) UNSIGNED NOT NULL UNIQUE,
     transponder_id INT UNSIGNED NOT NULL,
-    PRIMARY KEY (kart_number)
+    PRIMARY KEY (car_number)
 )  ENGINE=INNODB;
 
 CREATE TABLE IF NOT EXISTS `settings` (

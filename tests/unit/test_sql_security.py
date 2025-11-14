@@ -213,7 +213,7 @@ class TestNoSQLInjectionVulnerabilities:
             "valid_lap_time",
             "wave_finish_flag",
             "check_if_all_finished",
-            "get_kart_id",
+            "get_car_id",
         ]
 
         # This is a basic check - in a real scenario, you'd use AST parsing
