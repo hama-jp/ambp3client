@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>トランスポンダー管理 - AMB</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔧 トランスポンダー管理</h1>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">← ダッシュボードに戻る</a>
+            </div>
+        </header>
+
+        <!-- Add New Car Form -->
+        <section class="add-car-section">
+            <h2>新規登録</h2>
+            <form id="addCarForm" class="car-form">
+                <div class="form-group">
+                    <label for="newTransponderId">トランスポンダーID *</label>
+                    <input type="number" id="newTransponderId" required placeholder="例: 123456">
+                </div>
+                <div class="form-group">
+                    <label for="newCarNumber">カー番号</label>
+                    <input type="number" id="newCarNumber" placeholder="例: 10">
+                </div>
+                <div class="form-group">
+                    <label for="newName">ドライバー名</label>
+                    <input type="text" id="newName" placeholder="例: 山田太郎">
+                </div>
+                <button type="submit" class="btn btn-primary">登録</button>
+            </form>
+        </section>
+
+        <!-- Cars List -->
+        <section class="cars-list-section">
+            <div class="section-header">
+                <h2>登録済みトランスポンダー</h2>
+                <button id="refreshBtn" class="btn btn-secondary">🔄 更新</button>
+            </div>
+
+            <div id="loadingMessage" class="loading-message">読み込み中...</div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+            <div id="carsTableContainer">
+                <table class="cars-table">
+                    <thead>
+                        <tr>
+                            <th>トランスポンダーID</th>
+                            <th>カー番号</th>
+                            <th>ドライバー名</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="carsTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Edit Modal -->
+        <div id="editModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>トランスポンダー情報編集</h3>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <form id="editCarForm" class="car-form">
+                    <input type="hidden" id="editTransponderId">
+                    <div class="form-group">
+                        <label>トランスポンダーID</label>
+                        <input type="text" id="editTransponderIdDisplay" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCarNumber">カー番号</label>
+                        <input type="number" id="editCarNumber" placeholder="例: 10">
+                    </div>
+                    <div class="form-group">
+                        <label for="editName">ドライバー名</label>
+                        <input type="text" id="editName" placeholder="例: 山田太郎">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn btn-secondary" id="cancelEdit">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>削除の確認</h3>
+                    <button class="modal-close" id="closeDeleteModal">&times;</button>
+                </div>
+                <p id="deleteMessage">本当に削除しますか？</p>
+                <div class="modal-actions">
+                    <button id="confirmDelete" class="btn btn-danger">削除</button>
+                    <button id="cancelDelete" class="btn btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>AMB P3 Real-time Dashboard v1.0</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>
