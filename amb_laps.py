@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 from mysql.connector import Error as MysqlError
 from time import sleep
 import logging
@@ -67,11 +68,14 @@ def mysql_connect(conf):
     Raises:
         SystemExit: If connection fails
     """
+    # Use environment variable for password if available
+    mysql_password = os.getenv("MYSQL_PASSWORD", conf.get("mysql_password"))
+
     try:
         con = open_mysql_connection(
             user=conf["mysql_user"],
             db=conf["mysql_db"],
-            password=conf["mysql_password"],
+            password=mysql_password,
             host=conf["mysql_host"],
             port=conf["mysql_port"],
         )
