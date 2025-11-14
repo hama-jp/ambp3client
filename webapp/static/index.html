@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AMB ラップタイマー</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🏁 AMB ラップタイマー</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot offline"></span>
+                <span id="statusText">接続中...</span>
+            </div>
+        </header>
+
+        <!-- Transponder Selection -->
+        <section class="transponder-selection">
+            <label for="transponderSelect">トランスポンダー選択:</label>
+            <select id="transponderSelect" class="transponder-select">
+                <option value="">選択してください</option>
+            </select>
+        </section>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard" id="dashboard" style="display: none;">
+            <!-- Current Transponder Info -->
+            <div class="transponder-info">
+                <h2 id="transponderName">トランスポンダー #<span id="currentTransponderId"></span></h2>
+                <p class="total-laps">総周回数: <span id="totalLaps">0</span></p>
+            </div>
+
+            <!-- Lap Statistics Cards -->
+            <div class="stats-grid">
+                <!-- Best Lap -->
+                <div class="stat-card best-lap">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-label">ベストラップ</div>
+                    <div class="stat-value" id="bestLap">--:--</div>
+                </div>
+
+                <!-- Average Lap -->
+                <div class="stat-card average-lap">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-label">平均ラップ</div>
+                    <div class="stat-value" id="averageLap">--:--</div>
+                </div>
+
+                <!-- Latest Lap -->
+                <div class="stat-card latest-lap" id="latestLapCard">
+                    <div class="stat-icon">🔔</div>
+                    <div class="stat-label">最新ラップ</div>
+                    <div class="stat-value" id="latestLap">--:--</div>
+                </div>
+            </div>
+
+            <!-- Voice Control -->
+            <div class="voice-control">
+                <button id="voiceToggle" class="voice-toggle-btn">
+                    <span id="voiceIcon">🔊</span>
+                    <span id="voiceText">音声ON</span>
+                </button>
+            </div>
+
+            <!-- Last Update Time -->
+            <div class="last-update">
+                最終更新: <span id="lastUpdate">--</span>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>AMB P3 Real-time Dashboard v1.0</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
