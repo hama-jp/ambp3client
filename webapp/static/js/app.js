@@ -258,16 +258,22 @@ class LapTimerApp {
         // Cancel any ongoing speech
         this.speechSynthesis.cancel();
 
-        // Format time for speech (e.g., "1分23秒456")
+        // Format time for speech (e.g., "1分23秒、3-4")
         const minutes = Math.floor(lapTime / 60);
         const seconds = Math.floor(lapTime % 60);
-        const milliseconds = Math.floor((lapTime % 1) * 1000);
+        const centiseconds = Math.floor((lapTime % 1) * 100);
+
+        // Convert centisecond digits to Japanese
+        const digitNames = ['ぜろ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう'];
+        const tens = Math.floor(centiseconds / 10);
+        const ones = centiseconds % 10;
+        const centisecondText = `${digitNames[tens]}${digitNames[ones]}`;
 
         let speechText = '';
         if (minutes > 0) {
             speechText += `${minutes}分`;
         }
-        speechText += `${seconds}秒${milliseconds}`;
+        speechText += `${seconds}秒、${centisecondText}`;
 
         console.log('Speaking:', speechText);
 
