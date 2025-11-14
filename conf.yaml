@@ -4,10 +4,10 @@ port: 12000 # DEFAULT AMB 5403
 file: "/tmp/out.log"
 debug_file: "/tmp/amb_raw.log"
 mysql_backend: True
-mysql_db: 'karts'
+mysql_db: 'cars'
 mysql_port: 3307
-mysql_user: 'kart'
-mysql_password: 'karts'
+mysql_user: 'car'
+mysql_password: 'cars'
 # skip_crc_check: true  # Default: true (skip CRC validation)
                         # Some decoders send CRC as 0x0000
                         # Set to false to enable strict CRC validation

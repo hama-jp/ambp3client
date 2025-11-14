@@ -575,16 +575,16 @@ and rtc_time > %s limit 1"""
             )
             return self.dt.decoder_time
 
-    def get_kart_id(self, transponder_id):
-        """Convert transponder ID to kart number and name.
+    def get_car_id(self, transponder_id):
+        """Convert transponder ID to car number and name.
 
         Args:
             transponder_id: Transponder identifier
 
         Returns:
-            Tuple of (name, kart_number) or transponder_id if not found
+            Tuple of (name, car_number) or transponder_id if not found
         """
-        query = "select name, kart_number from karts where transponder_id = %s"
+        query = "select name, car_number from cars where transponder_id = %s"
         result = sql_select(self.cursor, query, (transponder_id,))
         if len(result) == 1:
             return result[0]

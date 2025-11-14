@@ -336,7 +336,7 @@ result = sql_select(self.cursor, query, (heat_id,))
 **場所**: `conf.yaml`
 
 ```yaml
-mysql_password: 'karts'
+mysql_password: 'cars'
 ```
 
 **影響**: 認証情報の漏洩

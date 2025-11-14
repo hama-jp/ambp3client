@@ -32,9 +32,9 @@ def load_config(config_file="conf.yaml"):
     default_config = {
         "mysql_host": "127.0.0.1",
         "mysql_port": 3306,
-        "mysql_db": "karts",
-        "mysql_user": "kart",
-        "mysql_password": "karts",
+        "mysql_db": "cars",
+        "mysql_user": "car",
+        "mysql_password": "cars",
     }
 
     # Get project root directory
@@ -65,10 +65,10 @@ class AppConfig:
     def __init__(self, config_dict):
         self.mysql_host = config_dict.get("mysql_host", "127.0.0.1")
         self.mysql_port = config_dict.get("mysql_port", 3306)
-        self.mysql_db = config_dict.get("mysql_db", "karts")
-        self.mysql_user = config_dict.get("mysql_user", "kart")
+        self.mysql_db = config_dict.get("mysql_db", "cars")
+        self.mysql_user = config_dict.get("mysql_user", "car")
         self.mysql_pass = config_dict.get(
-            "mysql_pass", config_dict.get("mysql_password", "karts")
+            "mysql_pass", config_dict.get("mysql_password", "cars")
         )
 
 
@@ -214,7 +214,7 @@ class LapData(BaseModel):
 class TransponderInfo(BaseModel):
     transponder_id: int
     name: Optional[str] = None
-    kart_number: Optional[int] = None
+    car_number: Optional[int] = None
 
 
 class LapStats(BaseModel):
@@ -259,11 +259,11 @@ async def root():
 
 @app.get("/api/transponders", response_model=List[TransponderInfo])
 async def get_transponders():
-    """Get list of all transponders with kart info"""
+    """Get list of all transponders with car info"""
     query = """
-        SELECT DISTINCT l.transponder_id, k.name, k.kart_number
+        SELECT DISTINCT l.transponder_id, c.name, c.car_number
         FROM laps l
-        LEFT JOIN karts k ON l.transponder_id = k.transponder_id
+        LEFT JOIN cars c ON l.transponder_id = c.transponder_id
         ORDER BY l.rtc_time DESC
         LIMIT 100
     """
@@ -278,7 +278,7 @@ async def get_transponders():
                 TransponderInfo(
                     transponder_id=tid,
                     name=row.get("name"),
-                    kart_number=row.get("kart_number"),
+                    car_number=row.get("car_number"),
                 )
             )
             seen.add(tid)
