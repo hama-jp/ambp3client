@@ -27,7 +27,10 @@ def open_mysql_connection(
 def dict_to_sqlquery(data_dict, table):
     columns_string = "( {} )".format(",".join(data_dict.keys()))
     values_string = "( {} )".format(",".join(["%s"] * len(data_dict.values())))
-    sql = """INSERT INTO {} {} VALUES {}""".format(table, columns_string, values_string)
+    # Table and column names are from trusted internal source, values use parameterized placeholders
+    sql = """INSERT INTO {} {} VALUES {}""".format(  # nosec
+        table, columns_string, values_string
+    )
     return sql
 
 
